@@ -6,7 +6,10 @@ import androidx.room.PrimaryKey
 
 @Entity
 data class OgEntity(
-    @PrimaryKey
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "id")
+    val id: Int,
+
     @ColumnInfo(name = "url")
     val url: String,
 

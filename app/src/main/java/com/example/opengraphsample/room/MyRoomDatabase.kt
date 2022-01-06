@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [OgEntity::class], version = 1, exportSchema = true)
+@Database(entities = [OgEntity::class], version = 2, exportSchema = true)
 abstract class MyRoomDatabase : RoomDatabase() {
     abstract fun getOgDAO() : OgDAO
 

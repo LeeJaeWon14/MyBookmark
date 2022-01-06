@@ -3,6 +3,7 @@ package com.example.opengraphsample.view
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -15,6 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.lang.NullPointerException
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -65,13 +67,20 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
 
-                        val entity = OgEntity(
-                            ogMap.get("url")!!,
-                            ogMap.get("siteName")!!,
-                            ogMap.get("title")!!,
-                            ogMap.get("description")!!,
-                            ogMap.get("image")!!
-                        )
+                        var entity: OgEntity? = null
+                        try {
+                            entity = OgEntity(
+                                0,
+                                ogMap.get("url")!!,
+                                ogMap.get("siteName")!!,
+                                ogMap.get("title")!!,
+                                ogMap.get("description")!!,
+                                ogMap.get("image")!!
+                            )
+                        } catch (e: NullPointerException) {
+                            Toast.makeText(this@MainActivity, "OpenGraph를 지원하지 않거나 잘못된 URL입니다.", Toast.LENGTH_SHORT).show()
+                            return@launch
+                        }
                         Log.e("Jsoup", entity.toString())
                         MyRoomDatabase.getInstance(this@MainActivity).getOgDAO()
                             .insertOg(entity)
@@ -80,6 +89,7 @@ class MainActivity : AppCompatActivity() {
                         MyRoomDatabase.getInstance(this@MainActivity).getOgDAO().getOg()
                     )
                 }
+                edtInputLink.setText("")
             }
 
             CoroutineScope(Dispatchers.IO).launch {

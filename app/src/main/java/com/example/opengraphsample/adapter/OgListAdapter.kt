@@ -1,5 +1,6 @@
 package com.example.opengraphsample.adapter
 
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.opengraphsample.R
 import com.example.opengraphsample.room.OgEntity
+import com.example.opengraphsample.view.WebActivity
 
 class OgListAdapter(private val ogList: List<OgEntity>) : RecyclerView.Adapter<OgListAdapter.OgListHolder>() {
     class OgListHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -39,7 +41,13 @@ class OgListAdapter(private val ogList: List<OgEntity>) : RecyclerView.Adapter<O
                 .into(ivImage)
 
             llGroup.setOnClickListener {
-                Toast.makeText(itemView.context, ogList[position].url, Toast.LENGTH_SHORT).show()
+                if(ogList[position].url == "")
+                    return@setOnClickListener
+                val intent = Intent(itemView.context, WebActivity::class.java).apply {
+                    putExtra("url", ogList[position].url)
+                }
+                itemView.context.startActivity(intent)
+//                Toast.makeText(itemView.context, ogList[position].url, Toast.LENGTH_SHORT).show()
             }
         }
     }
