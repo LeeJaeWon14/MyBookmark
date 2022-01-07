@@ -3,6 +3,7 @@ package com.example.opengraphsample.view
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
@@ -22,13 +23,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val ogMap: HashMap<String, String> = HashMap()
     private val ogList: MutableLiveData<List<OgEntity>> by lazy { MutableLiveData<List<OgEntity>>() }
+    private lateinit var manager: InputMethodManager
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        manager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+
         binding.apply {
             btnAddLink.setOnClickListener {
+                manager.hideSoftInputFromWindow(currentFocus?.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
 //                Toast.makeText(this@MainActivity, edtInputLink.text.toString().trim(), Toast.LENGTH_SHORT).show()
                 CoroutineScope(Dispatchers.IO).launch {
                     val elements = CrawlingTask.getElements(edtInputLink.text.toString().trim())
@@ -38,29 +43,21 @@ class MainActivity : AppCompatActivity() {
                                 "og:url" -> {
                                     el.attr("content")?.let { content ->
                                         ogMap.put("url", content)
-                                    } ?: run {
-                                        ogMap.put("url", "")
                                     }
                                 }
                                 "og:site_name" -> {
                                     el.attr("content")?.let { content ->
                                         ogMap.put("siteName", content)
-                                    } ?: run {
-                                        ogMap.put("siteName", "")
                                     }
                                 }
                                 "og:title" -> {
                                     el.attr("content")?.let { content ->
                                         ogMap.put("title", content)
-                                    } ?: run {
-                                        ogMap.put("title", "")
                                     }
                                 }
                                 "og:description" -> {
                                     el.attr("content")?.let { content ->
                                         ogMap.put("description", content)
-                                    } ?: run {
-                                        ogMap.put("description", "")
                                     }
                                 }
                                 "og:image" -> { ogMap.put("image", el.attr("content")) }
@@ -78,6 +75,7 @@ class MainActivity : AppCompatActivity() {
                                 ogMap.get("image")!!
                             )
                         } catch (e: NullPointerException) {
+                            e.printStackTrace()
                             Toast.makeText(this@MainActivity, "OpenGraph를 지원하지 않거나 잘못된 URL입니다.", Toast.LENGTH_SHORT).show()
                             return@launch
                         }

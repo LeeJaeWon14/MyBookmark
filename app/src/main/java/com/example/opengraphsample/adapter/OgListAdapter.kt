@@ -1,5 +1,6 @@
 package com.example.opengraphsample.adapter
 
+import android.content.DialogInterface
 import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
@@ -8,13 +9,19 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.opengraphsample.R
+import com.example.opengraphsample.room.MyRoomDatabase
 import com.example.opengraphsample.room.OgEntity
 import com.example.opengraphsample.view.WebActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-class OgListAdapter(private val ogList: List<OgEntity>) : RecyclerView.Adapter<OgListAdapter.OgListHolder>() {
+class OgListAdapter(private val _ogList: List<OgEntity>) : RecyclerView.Adapter<OgListAdapter.OgListHolder>() {
+    private val ogList = _ogList.toMutableList()
     class OgListHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvTitle: TextView = view.findViewById(R.id.tv_og_title)
         val tvSiteName: TextView = view.findViewById(R.id.tv_og_site_name)
@@ -40,14 +47,32 @@ class OgListAdapter(private val ogList: List<OgEntity>) : RecyclerView.Adapter<O
                 .thumbnail(0.2f)
                 .into(ivImage)
 
-            llGroup.setOnClickListener {
-                if(ogList[position].url == "")
-                    return@setOnClickListener
-                val intent = Intent(itemView.context, WebActivity::class.java).apply {
-                    putExtra("url", ogList[position].url)
-                }
-                itemView.context.startActivity(intent)
+            llGroup.apply {
+                setOnClickListener {
+                    if(ogList[position].url == "")
+                        return@setOnClickListener
+                    val intent = Intent(itemView.context, WebActivity::class.java).apply {
+                        putExtra("url", ogList[position].url)
+                    }
+                    itemView.context.startActivity(intent)
 //                Toast.makeText(itemView.context, ogList[position].url, Toast.LENGTH_SHORT).show()
+                }
+                setOnLongClickListener {
+                    AlertDialog.Builder(itemView.context)
+                            .setMessage("삭제하시겠습니까?")
+                            .setPositiveButton("삭제") { _, _ ->
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    MyRoomDatabase.getInstance(itemView.context).getOgDAO()
+                                            .deleteOg(ogList[position])
+                                    ogList.removeAt(position)
+                                }
+                                notifyDataSetChanged()
+                            }
+                            .setNegativeButton("취소", null)
+                            .show()
+
+                    true
+                }
             }
         }
     }
