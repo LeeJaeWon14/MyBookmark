@@ -11,7 +11,11 @@ object CrawlingTask {
         var elements: Elements? = null
         try {
             document = Jsoup.connect(url).get()
-            elements = document.select("meta[property^=og:]")
+            document?.let {
+                elements = document.select("meta[property^=og:]")
+            } ?: run {
+                return null
+            }
         } catch(e: Exception) { e.printStackTrace() }
         return elements
     }
