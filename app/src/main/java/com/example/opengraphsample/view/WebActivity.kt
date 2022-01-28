@@ -2,6 +2,7 @@ package com.example.opengraphsample.view
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.MenuItem
 import android.webkit.WebSettings
 import android.webkit.WebViewClient
 import com.example.opengraphsample.R
@@ -13,6 +14,11 @@ class WebActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityWebBinding.inflate(layoutInflater)
         setContentView(binding.root)
+//        actionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.run {
+            setDisplayHomeAsUpEnabled(true)
+            title = intent.getStringExtra("siteName")
+        }
 
         binding.webView.apply {
             webViewClient = WebViewClient()
@@ -25,6 +31,12 @@ class WebActivity : AppCompatActivity() {
             }
             intent.getStringExtra("url")?.let { loadUrl(it) }
         }
-        binding.btnBack.setOnClickListener { finish() }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId) {
+            android.R.id.home -> { onBackPressed() }
+        }
+        return true
     }
 }

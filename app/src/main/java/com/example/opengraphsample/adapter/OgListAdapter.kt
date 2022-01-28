@@ -53,6 +53,7 @@ class OgListAdapter(private val _ogList: List<OgEntity>) : RecyclerView.Adapter<
                         return@setOnClickListener
                     val intent = Intent(itemView.context, WebActivity::class.java).apply {
                         putExtra("url", ogList[position].url)
+                        putExtra("siteName", ogList[position].siteName)
                     }
                     itemView.context.startActivity(intent)
 //                Toast.makeText(itemView.context, ogList[position].url, Toast.LENGTH_SHORT).show()

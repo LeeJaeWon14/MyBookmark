@@ -38,7 +38,8 @@ class MainActivity : AppCompatActivity() {
         binding.apply {
             btnAddLink.setOnClickListener {
                 manager.hideSoftInputFromWindow(currentFocus?.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
-                url = edtInputLink.text.toString().trim()
+                url = getUrl(edtInputLink.text.toString().trim())
+                Log.e("jsoup", "url is $url")
                 CoroutineScope(Dispatchers.IO).launch {
                     val elements = CrawlingTask.getElements(url)
                     elements?.let {
@@ -144,5 +145,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun getUrl(url: String) : String {
+        return if(url.contains("http://") || url.contains("https://")) url
+                else "https://".plus(url)
     }
 }
