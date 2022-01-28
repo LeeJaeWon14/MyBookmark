@@ -1,5 +1,6 @@
 package com.example.opengraphsample.view
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -8,6 +9,7 @@ import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.opengraphsample.Constants
 import com.example.opengraphsample.R
 import com.example.opengraphsample.adapter.OgListAdapter
 import com.example.opengraphsample.databinding.ActivityMainBinding
@@ -44,33 +46,30 @@ class MainActivity : AppCompatActivity() {
                             when(el.attr("property")) {
                                 "og:url" -> {
                                     el.attr("content")?.let { content ->
-                                        ogMap.put("url", content)
-                                    } ?: run {
-                                        ogMap.put("url", "")
+                                        ogMap.put(Constants.URL, content)
                                     }
                                 }
                                 "og:site_name" -> {
                                     el.attr("content")?.let { content ->
-                                        ogMap.put("siteName", content)
-                                    } ?: run {
-                                        ogMap.put("siteName", "")
+                                        ogMap.put(Constants.SITE_NAME, content)
                                     }
                                 }
                                 "og:title" -> {
                                     el.attr("content")?.let { content ->
-                                        ogMap.put("title", content)
-                                    } ?: run {
-                                        ogMap.put("title", "")
+                                        ogMap.put(Constants.TITLE, content)
                                     }
                                 }
                                 "og:description" -> {
                                     el.attr("content")?.let { content ->
-                                        ogMap.put("description", content)
-                                    } ?: run {
-                                        ogMap.put("description", "")
+                                        ogMap.put(Constants.DESCRIPTION, content)
                                     }
                                 }
-                                "og:image" -> { ogMap.put("image", el.attr("content")) }
+                                "og:image" -> {
+                                    el.attr("content")?.let { content ->
+                                        ogMap.put(Constants.IMAGE, content)
+                                    }
+
+                                }
                             }
                         }
                         ogMap.putAll(checkOg(ogMap))
@@ -78,11 +77,11 @@ class MainActivity : AppCompatActivity() {
                         try {
                             entity = OgEntity(
                                 0,
-                                ogMap.get("url")!!,
-                                ogMap.get("siteName")!!,
-                                ogMap.get("title")!!,
-                                ogMap.get("description")!!,
-                                ogMap.get("image")!!
+                                ogMap.get(Constants.URL)!!,
+                                ogMap.get(Constants.SITE_NAME)!!,
+                                ogMap.get(Constants.TITLE)!!,
+                                ogMap.get(Constants.DESCRIPTION)!!,
+                                ogMap.get(Constants.IMAGE)!!
                             )
                         } catch (e: NullPointerException) {
                             Log.e("Jsoup", ogMap.toString())
@@ -120,22 +119,30 @@ class MainActivity : AppCompatActivity() {
                 rvLinkList.adapter = OgListAdapter(it)
             })
         }
+
+        shareAction()
     }
 
     private fun checkOg(ogMap: HashMap<String, String>) : HashMap<String, String> {
-        ogMap.get("url")?.let {
-
-        } ?: run {
-            ogMap.put("url", url)
+        ogMap.run {
+            put(Constants.URL, get(Constants.URL) ?: url)
+            put(Constants.SITE_NAME, get(Constants.SITE_NAME) ?: getSiteName(url))
+            put(Constants.TITLE, get(Constants.TITLE) ?: "제목없음")
+            put(Constants.DESCRIPTION, get(Constants.DESCRIPTION) ?: "설명없음")
+            put(Constants.IMAGE, get(Constants.IMAGE) ?: "이미지 없음")
         }
-        ogMap.get("site_name")?.let {
-
-        } ?: run {
-            ogMap.put("siteName", getSiteName(url))
-        }
-
         return ogMap
     }
 
     private fun getSiteName(url: String) : String = url.split("://")[1].split("/")[0]
+
+    private fun shareAction() {
+        when(intent.action) {
+            Intent.ACTION_SEND -> {
+                if(intent.type == "text/plain") {
+                    binding.edtInputLink.setText(intent.getStringExtra(Intent.EXTRA_TEXT))
+                }
+            }
+        }
+    }
 }
