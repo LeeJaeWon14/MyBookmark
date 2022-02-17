@@ -92,7 +92,5 @@ class OgListAdapter(private val _ogList: List<OgEntity>) : RecyclerView.Adapter<
         return ogList.size
     }
 
-    private fun checkedUseExtBrowser() : Boolean {
-        return Pref.getInstance(context)?.getBoolean(Pref.USE_EXT_BROWSER)!!
-    }
+    private fun checkedUseExtBrowser() : Boolean = Pref.getInstance(context)?.getBoolean(Pref.USE_EXT_BROWSER)!!
 }
