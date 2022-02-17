@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.OpenGraphSample"
         android:usesCleartextTraffic="true">
-        <activity android:name=".view.WebActivity"></activity>
+        <activity android:name=".view.WebActivity"/>
         <activity android:name=".view.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

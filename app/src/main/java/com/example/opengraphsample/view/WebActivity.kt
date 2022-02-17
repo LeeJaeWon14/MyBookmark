@@ -14,7 +14,6 @@ class WebActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityWebBinding.inflate(layoutInflater)
         setContentView(binding.root)
-//        actionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.run {
             setDisplayHomeAsUpEnabled(true)
             title = intent.getStringExtra("siteName")

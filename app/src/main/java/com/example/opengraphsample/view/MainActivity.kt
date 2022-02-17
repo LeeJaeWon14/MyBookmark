@@ -87,7 +87,7 @@ class MainActivity : AppCompatActivity() {
                         } catch (e: NullPointerException) {
                             Log.e("Jsoup", ogMap.toString())
                             e.printStackTrace()
-                            runOnUiThread {
+                            withContext(Dispatchers.Main) {
                                 Toast.makeText(this@MainActivity, getString(R.string.str_not_supported_og), Toast.LENGTH_SHORT).show()
                             }
                             return@launch
@@ -96,7 +96,7 @@ class MainActivity : AppCompatActivity() {
                         MyRoomDatabase.getInstance(this@MainActivity).getOgDAO()
                             .insertOg(entity)
                     } ?: run {
-                        runOnUiThread {
+                        withContext(Dispatchers.Main) {
                             Toast.makeText(this@MainActivity, getString(R.string.str_invalid_url), Toast.LENGTH_SHORT).show()
                         }
                     }
@@ -112,6 +112,7 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     rvLinkList.layoutManager = LinearLayoutManager(this@MainActivity)
                     rvLinkList.adapter = OgListAdapter(itemList)
+                    super.getSupportActionBar()?.title = String.format(getString(R.string.str_toolbar_title), itemList.count())
                 }
             }
 
