@@ -1,11 +1,15 @@
 package com.example.opengraphsample.view
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
 import android.view.inputmethod.InputMethodManager
-import android.widget.Toast
+import android.widget.*
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -16,11 +20,11 @@ import com.example.opengraphsample.databinding.ActivityMainBinding
 import com.example.opengraphsample.network.CrawlingTask
 import com.example.opengraphsample.room.MyRoomDatabase
 import com.example.opengraphsample.room.OgEntity
+import com.example.opengraphsample.util.Pref
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.lang.NullPointerException
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -112,17 +116,50 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     rvLinkList.layoutManager = LinearLayoutManager(this@MainActivity)
                     rvLinkList.adapter = OgListAdapter(itemList)
-                    super.getSupportActionBar()?.title = String.format(getString(R.string.str_toolbar_title), itemList.count())
+                    super.getSupportActionBar()?.let {
+                        it.title = String.format(getString(R.string.str_toolbar_title), itemList.count())
+                    }
                 }
             }
 
 
             ogList.observe(this@MainActivity, Observer {
+                super.getSupportActionBar()?.title = String.format(getString(R.string.str_toolbar_title), it.count())
                 rvLinkList.adapter = OgListAdapter(it)
             })
         }
 
         shareAction()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId) {
+            R.id.menu_setting -> {
+                val dlgView = View.inflate(this, R.layout.layout_setting_dialog, null)
+                val dlg = AlertDialog.Builder(this).create()
+                dlg.setView(dlgView)
+
+                dlgView.findViewById<CheckBox>(R.id.chk_ext_browser_use).run {
+                    isChecked = Pref.getInstance(this@MainActivity)?.getBoolean(Pref.USE_EXT_BROWSER)!!
+                    setOnCheckedChangeListener { compoundButton: CompoundButton, checked: Boolean ->
+                        Pref.getInstance(this@MainActivity)?.setValue(Pref.USE_EXT_BROWSER, checked)
+                    }
+                }
+                dlgView.findViewById<Button>(R.id.btn_close_dialog).run {
+                    setOnClickListener { dlg.dismiss() }
+                }
+
+                dlg.setCancelable(false)
+                dlg.show()
+
+            }
+        }
+        return true
     }
 
     private fun checkOg(ogMap: HashMap<String, String>) : HashMap<String, String> {

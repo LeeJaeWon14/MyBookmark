@@ -1,20 +1,21 @@
 package com.example.opengraphsample.adapter
 
-import android.content.DialogInterface
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.opengraphsample.R
 import com.example.opengraphsample.room.MyRoomDatabase
 import com.example.opengraphsample.room.OgEntity
+import com.example.opengraphsample.util.Pref
 import com.example.opengraphsample.view.WebActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +23,7 @@ import kotlinx.coroutines.launch
 
 class OgListAdapter(private val _ogList: List<OgEntity>) : RecyclerView.Adapter<OgListAdapter.OgListHolder>() {
     private val ogList = _ogList.toMutableList()
+    private lateinit var context: Context
     class OgListHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvTitle: TextView = view.findViewById(R.id.tv_og_title)
         val tvSiteName: TextView = view.findViewById(R.id.tv_og_site_name)
@@ -32,6 +34,7 @@ class OgListAdapter(private val _ogList: List<OgEntity>) : RecyclerView.Adapter<
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): OgListHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_recycler, parent, false)
+        context = parent.context
         return OgListHolder(view)
     }
 
@@ -51,11 +54,18 @@ class OgListAdapter(private val _ogList: List<OgEntity>) : RecyclerView.Adapter<
                 setOnClickListener {
                     if(ogList[position].url == "")
                         return@setOnClickListener
-                    val intent = Intent(itemView.context, WebActivity::class.java).apply {
-                        putExtra("url", ogList[position].url)
-                        putExtra("siteName", ogList[position].siteName)
+                    if(checkedUseExtBrowser()) {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(ogList[position].url))
+                        itemView.context.startActivity(intent)
                     }
-                    itemView.context.startActivity(intent)
+                    else {
+                        val intent = Intent(itemView.context, WebActivity::class.java).apply {
+                            putExtra("url", ogList[position].url)
+                            putExtra("siteName", ogList[position].siteName)
+                        }
+                        itemView.context.startActivity(intent)
+                    }
+
 //                Toast.makeText(itemView.context, ogList[position].url, Toast.LENGTH_SHORT).show()
                 }
                 setOnLongClickListener {
@@ -80,5 +90,9 @@ class OgListAdapter(private val _ogList: List<OgEntity>) : RecyclerView.Adapter<
 
     override fun getItemCount(): Int {
         return ogList.size
+    }
+
+    private fun checkedUseExtBrowser() : Boolean {
+        return Pref.getInstance(context)?.getBoolean(Pref.USE_EXT_BROWSER)!!
     }
 }

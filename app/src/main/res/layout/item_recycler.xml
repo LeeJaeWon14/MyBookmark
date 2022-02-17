@@ -3,35 +3,51 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/border"
+    android:background="@drawable/ripple_border"
     android:padding="10dp"
     android:layout_marginBottom="5dp"
     android:id="@+id/ll_group">
-    <ImageView
-        android:id="@+id/iv_og_image"
-        android:layout_width="match_parent"
-        android:layout_height="100dp"
-        android:contentDescription="@string/todo" />
-    <TextView
-        android:id="@+id/tv_og_title"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text=""
-        tools:text="title"
-        android:textSize="15dp"
-        android:textColor="@color/black"
-        android:textAlignment="center"
-        android:layout_marginBottom="10dp"/>
-    <TextView
-        android:id="@+id/tv_og_site_name"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text=""
-        tools:text="title"
-        android:textSize="15dp"
-        android:textColor="@color/black"
-        android:textAlignment="center"
-        android:layout_marginBottom="10dp"/>
+        android:orientation="horizontal"
+        android:layout_marginBottom="5dp">
+        <ImageView
+            android:id="@+id/iv_og_image"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="100dp"
+            android:contentDescription="@string/todo" />
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginStart="5dp">
+            <TextView
+                android:id="@+id/tv_og_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                tools:text="title"
+                android:textSize="15dp"
+                android:textColor="@color/black"
+                android:textAlignment="center"
+                android:layout_marginBottom="10dp"
+                android:fontFamily="@font/baemin"/>
+            <TextView
+                android:id="@+id/tv_og_site_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                tools:text="title"
+                android:textSize="15dp"
+                android:textColor="@color/black"
+                android:textAlignment="center"
+                android:layout_marginBottom="10dp"
+                android:fontFamily="@font/baemin"/>
+        </LinearLayout>
+    </LinearLayout>
     <TextView
         android:id="@+id/tv_og_description"
         android:layout_width="match_parent"
@@ -40,5 +56,7 @@
         tools:text="title"
         android:textSize="15dp"
         android:textColor="@color/black"
-        android:textAlignment="center"/>
+        android:textAlignment="center"
+        android:maxLines ="3"
+        android:fontFamily="@font/baemin"/>
 </LinearLayout>
