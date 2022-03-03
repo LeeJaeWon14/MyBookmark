@@ -1,12 +1,11 @@
 package com.example.opengraphsample.view
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.MenuItem
 import android.webkit.WebSettings
-import android.webkit.WebViewClient
-import com.example.opengraphsample.R
+import androidx.appcompat.app.AppCompatActivity
 import com.example.opengraphsample.databinding.ActivityWebBinding
+import com.example.opengraphsample.util.MyClient
 
 class WebActivity : AppCompatActivity() {
     private lateinit var binding: ActivityWebBinding
@@ -20,10 +19,11 @@ class WebActivity : AppCompatActivity() {
         }
 
         binding.webView.apply {
-            webViewClient = WebViewClient()
+            webViewClient = MyClient()
             with(settings) {
                 javaScriptEnabled = true
                 loadWithOverviewMode = true
+                useWideViewPort = true
                 cacheMode = WebSettings.LOAD_DEFAULT
                 builtInZoomControls = true
                 setSupportZoom(true)

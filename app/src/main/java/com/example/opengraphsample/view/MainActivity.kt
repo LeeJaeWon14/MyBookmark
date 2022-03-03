@@ -2,7 +2,6 @@ package com.example.opengraphsample.view
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -20,6 +19,7 @@ import com.example.opengraphsample.databinding.ActivityMainBinding
 import com.example.opengraphsample.network.CrawlingTask
 import com.example.opengraphsample.room.MyRoomDatabase
 import com.example.opengraphsample.room.OgEntity
+import com.example.opengraphsample.util.Log
 import com.example.opengraphsample.util.Pref
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
             btnAddLink.setOnClickListener {
                 manager.hideSoftInputFromWindow(currentFocus?.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
                 url = getUrl(edtInputLink.text.toString().trim())
-                Log.e("jsoup", "url is $url")
+                Log.e("url is $url")
                 CoroutineScope(Dispatchers.IO).launch {
                     val elements = CrawlingTask.getElements(url)
                     elements?.let {
@@ -78,7 +78,7 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                         ogMap.putAll(checkOg(ogMap))
-                        var entity: OgEntity? = null
+                        lateinit var entity: OgEntity
                         try {
                             entity = OgEntity(
                                 0,
@@ -89,14 +89,16 @@ class MainActivity : AppCompatActivity() {
                                 ogMap.get(Constants.IMAGE)!!
                             )
                         } catch (e: NullPointerException) {
-                            Log.e("Jsoup", ogMap.toString())
+                            Log.e(ogMap.toString())
                             e.printStackTrace()
                             withContext(Dispatchers.Main) {
                                 Toast.makeText(this@MainActivity, getString(R.string.str_not_supported_og), Toast.LENGTH_SHORT).show()
                             }
                             return@launch
+                        } catch (e: Exception) {
+                            e.printStackTrace()
                         }
-                        Log.e("Jsoup", entity.toString())
+                        Log.e(entity.toString())
                         MyRoomDatabase.getInstance(this@MainActivity).getOgDAO()
                             .insertOg(entity)
                     } ?: run {
