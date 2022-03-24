@@ -1,4 +1,4 @@
-package com.example.opengraphsample.room
+package com.example.opengraphsample.repository.room
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity

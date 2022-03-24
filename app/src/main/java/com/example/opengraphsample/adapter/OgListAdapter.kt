@@ -13,8 +13,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.opengraphsample.R
-import com.example.opengraphsample.room.MyRoomDatabase
-import com.example.opengraphsample.room.OgEntity
+import com.example.opengraphsample.repository.room.MyRoomDatabase
+import com.example.opengraphsample.repository.room.OgEntity
 import com.example.opengraphsample.util.Pref
 import com.example.opengraphsample.view.WebActivity
 import kotlinx.coroutines.CoroutineScope

@@ -1,4 +1,4 @@
-package com.example.opengraphsample.room
+package com.example.opengraphsample.repository.room
 
 import android.content.Context
 import androidx.room.Database

@@ -17,8 +17,8 @@ import com.example.opengraphsample.R
 import com.example.opengraphsample.adapter.OgListAdapter
 import com.example.opengraphsample.databinding.ActivityMainBinding
 import com.example.opengraphsample.network.CrawlingTask
-import com.example.opengraphsample.room.MyRoomDatabase
-import com.example.opengraphsample.room.OgEntity
+import com.example.opengraphsample.repository.room.MyRoomDatabase
+import com.example.opengraphsample.repository.room.OgEntity
 import com.example.opengraphsample.util.Log
 import com.example.opengraphsample.util.Pref
 import kotlinx.coroutines.CoroutineScope
