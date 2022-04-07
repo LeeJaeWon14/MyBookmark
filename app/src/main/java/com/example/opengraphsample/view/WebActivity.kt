@@ -27,6 +27,7 @@ class WebActivity : AppCompatActivity() {
                 cacheMode = WebSettings.LOAD_DEFAULT
                 builtInZoomControls = true
                 setSupportZoom(true)
+                textZoom = 95
             }
             intent.getStringExtra("url")?.let { loadUrl(it) }
         }

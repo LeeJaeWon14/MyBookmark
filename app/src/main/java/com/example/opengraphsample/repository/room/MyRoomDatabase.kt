@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [OgEntity::class], version = 2, exportSchema = true)
+@Database(entities = [OgEntity::class], version = 3, exportSchema = true)
 abstract class MyRoomDatabase : RoomDatabase() {
     abstract fun getOgDAO() : OgDAO
 
@@ -20,9 +20,17 @@ abstract class MyRoomDatabase : RoomDatabase() {
                     context.applicationContext,
                     MyRoomDatabase::class.java,
                     "OpenGraph.db"
-                ).fallbackToDestructiveMigration().build()
+                )/*.addMigrations(MIGRATION_TO_2)*/
+                        .fallbackToDestructiveMigration()
+                        .build() // Will adding migration
                 return instance!!
             }
         }
+
+//        private val MIGRATION_TO_2 = object : Migration(2, 3) {
+//            override fun migrate(database: SupportSQLiteDatabase) {
+//                database.execSQL("")
+//            }
+//        }
     }
 }

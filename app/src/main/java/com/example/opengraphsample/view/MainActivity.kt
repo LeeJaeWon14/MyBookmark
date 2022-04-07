@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
@@ -16,6 +15,7 @@ import com.example.opengraphsample.Constants
 import com.example.opengraphsample.R
 import com.example.opengraphsample.adapter.OgListAdapter
 import com.example.opengraphsample.databinding.ActivityMainBinding
+import com.example.opengraphsample.databinding.LayoutSettingDialogBinding
 import com.example.opengraphsample.network.CrawlingTask
 import com.example.opengraphsample.repository.room.MyRoomDatabase
 import com.example.opengraphsample.repository.room.OgEntity
@@ -110,21 +110,22 @@ class MainActivity : AppCompatActivity() {
                 val itemList = MyRoomDatabase.getInstance(this@MainActivity).getOgDAO().getOg()
                 withContext(Dispatchers.Main) {
                     rvLinkList.layoutManager = LinearLayoutManager(this@MainActivity)
-                    rvLinkList.adapter = OgListAdapter(itemList)
-                    supportActionBar?.let {
-                        it.title = String.format(getString(R.string.str_toolbar_title), itemList.count())
-                    }
+                    updateList(itemList)
                 }
             }
 
 
             ogList.observe(this@MainActivity, Observer {
-                supportActionBar?.title = String.format(getString(R.string.str_toolbar_title), it.count())
-                rvLinkList.adapter = OgListAdapter(it)
+                updateList(it)
             })
         }
 
         shareAction()
+    }
+
+    private fun updateList(list: List<OgEntity>) {
+        supportActionBar?.title = String.format(getString(R.string.str_toolbar_title), list.count())
+        binding.rvLinkList.adapter = OgListAdapter(list)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -135,20 +136,20 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
             R.id.menu_setting -> {
-                val dlgView = View.inflate(this, R.layout.layout_setting_dialog, null)
+                val dlgBinding = LayoutSettingDialogBinding.inflate(layoutInflater)
                 val dlg = AlertDialog.Builder(this).create()
-                dlg.setView(dlgView)
+                dlg.setView(dlgBinding.root)
 
-                dlgView.findViewById<CheckBox>(R.id.chk_ext_browser_use).run {
-                    isChecked = Pref.getInstance(this@MainActivity)?.getBoolean(Pref.USE_EXT_BROWSER)!!
-                    setOnCheckedChangeListener { compoundButton: CompoundButton, checked: Boolean ->
-                        Pref.getInstance(this@MainActivity)?.setValue(Pref.USE_EXT_BROWSER, checked)
+                dlgBinding.apply {
+                    chkExtBrowserUse.run {
+                        isChecked = Pref.getInstance(this@MainActivity)?.getBoolean(Pref.USE_EXT_BROWSER)!!
+                        setOnCheckedChangeListener { compoundButton: CompoundButton, checked: Boolean ->
+                            Pref.getInstance(this@MainActivity)?.setValue(Pref.USE_EXT_BROWSER, checked)
+                        }
                     }
-                }
-                dlgView.findViewById<Button>(R.id.btn_close_dialog).run {
-                    setOnClickListener { dlg.dismiss() }
-                }
 
+                    btnCloseDialog.setOnClickListener { dlg.dismiss() }
+                }
                 dlg.setCancelable(false)
                 dlg.show()
 

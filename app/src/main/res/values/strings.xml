@@ -7,4 +7,5 @@
     <string name="str_err_cleartext">net::ERR_CLEARTEXT_NOT_PERMITTED</string>
     <string name="str_delete_success">삭제되었습니다.</string>
     <string name="str_undo_delete">되돌리기</string>
+    <string name="str_delete_confirm">삭제하시겠습니까?</string>
 </resources>

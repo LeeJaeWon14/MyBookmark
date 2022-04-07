@@ -75,7 +75,7 @@ class OgListAdapter(private val _ogList: List<OgEntity>) : RecyclerView.Adapter<
                 }
                 setOnLongClickListener {
                     AlertDialog.Builder(itemView.context)
-                            .setMessage("삭제하시겠습니까?")
+                            .setMessage(itemView.context.getString(R.string.str_delete_confirm))
                             .setPositiveButton("삭제") { _, _ ->
                                 CoroutineScope(Dispatchers.IO).launch {
                                     undoMap.apply {
