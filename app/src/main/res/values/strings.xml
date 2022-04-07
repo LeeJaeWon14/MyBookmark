@@ -4,4 +4,7 @@
     <string name="str_invalid_url">유효하지 않은 URL입니다.</string>
     <string name="str_not_supported_og">OpenGraph를 지원하지 않거나 잘못된 URL입니다.</string>
     <string name="str_toolbar_title">저장된 페이지 %s개</string>
+    <string name="str_err_cleartext">net::ERR_CLEARTEXT_NOT_PERMITTED</string>
+    <string name="str_delete_success">삭제되었습니다.</string>
+    <string name="str_undo_delete">되돌리기</string>
 </resources>

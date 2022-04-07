@@ -80,14 +80,7 @@ class MainActivity : AppCompatActivity() {
                         ogMap.putAll(checkOg(ogMap))
                         lateinit var entity: OgEntity
                         try {
-                            entity = OgEntity(
-                                0,
-                                ogMap.get(Constants.URL)!!,
-                                ogMap.get(Constants.SITE_NAME)!!,
-                                ogMap.get(Constants.TITLE)!!,
-                                ogMap.get(Constants.DESCRIPTION)!!,
-                                ogMap.get(Constants.IMAGE)!!
-                            )
+                            entity = OgEntity(ogMap)
                         } catch (e: NullPointerException) {
                             Log.e(ogMap.toString())
                             e.printStackTrace()
@@ -118,7 +111,7 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     rvLinkList.layoutManager = LinearLayoutManager(this@MainActivity)
                     rvLinkList.adapter = OgListAdapter(itemList)
-                    super.getSupportActionBar()?.let {
+                    supportActionBar?.let {
                         it.title = String.format(getString(R.string.str_toolbar_title), itemList.count())
                     }
                 }
@@ -126,7 +119,7 @@ class MainActivity : AppCompatActivity() {
 
 
             ogList.observe(this@MainActivity, Observer {
-                super.getSupportActionBar()?.title = String.format(getString(R.string.str_toolbar_title), it.count())
+                supportActionBar?.title = String.format(getString(R.string.str_toolbar_title), it.count())
                 rvLinkList.adapter = OgListAdapter(it)
             })
         }

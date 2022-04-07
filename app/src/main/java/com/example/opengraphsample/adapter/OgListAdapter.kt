@@ -3,6 +3,7 @@ package com.example.opengraphsample.adapter
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,6 +18,7 @@ import com.example.opengraphsample.repository.room.MyRoomDatabase
 import com.example.opengraphsample.repository.room.OgEntity
 import com.example.opengraphsample.util.Pref
 import com.example.opengraphsample.view.WebActivity
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -24,6 +26,9 @@ import kotlinx.coroutines.launch
 class OgListAdapter(private val _ogList: List<OgEntity>) : RecyclerView.Adapter<OgListAdapter.OgListHolder>() {
     private val ogList = _ogList.toMutableList()
     private lateinit var context: Context
+    private val undoBundle = Bundle()
+    private val undoMap: HashMap<String, Any> = HashMap()
+
     class OgListHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvTitle: TextView = view.findViewById(R.id.tv_og_title)
         val tvSiteName: TextView = view.findViewById(R.id.tv_og_site_name)
@@ -73,13 +78,30 @@ class OgListAdapter(private val _ogList: List<OgEntity>) : RecyclerView.Adapter<
                             .setMessage("삭제하시겠습니까?")
                             .setPositiveButton("삭제") { _, _ ->
                                 CoroutineScope(Dispatchers.IO).launch {
+                                    undoMap.apply {
+                                        put("position", position)
+                                        put("og", ogList[position])
+                                    }
                                     MyRoomDatabase.getInstance(itemView.context).getOgDAO()
                                             .deleteOg(ogList[position])
                                     ogList.removeAt(position)
                                 }
                                 notifyDataSetChanged()
+                                Snackbar.make(it, itemView.context.getString(R.string.str_delete_success), Snackbar.LENGTH_SHORT)
+                                        .setAction(itemView.context.getString(R.string.str_undo_delete)) {
+                                            val pos = undoMap.get("position") as Int
+                                            val og = undoMap.get("og") as OgEntity
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                MyRoomDatabase.getInstance(itemView.context).getOgDAO()
+                                                        .insertOg(og)
+                                            }
+                                            ogList.add(pos, og)
+                                            notifyDataSetChanged()
+                                        }
+                                        .show()
                             }
                             .setNegativeButton("취소", null)
+                            .setCancelable(false)
                             .show()
 
                     true

@@ -3,6 +3,7 @@ package com.example.opengraphsample.repository.room
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.opengraphsample.Constants
 
 @Entity
 data class OgEntity(
@@ -24,4 +25,13 @@ data class OgEntity(
 
     @ColumnInfo(name = "image")
     val image: String
-)
+) {
+    constructor(ogMap: HashMap<String, String>) : this(
+        0,
+        ogMap.get(Constants.URL)!!,
+        ogMap.get(Constants.SITE_NAME)!!,
+        ogMap.get(Constants.TITLE)!!,
+        ogMap.get(Constants.DESCRIPTION)!!,
+        ogMap.get(Constants.IMAGE)!!
+    )
+}
