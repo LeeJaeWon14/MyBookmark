@@ -1,8 +1,9 @@
 package com.example.opengraphsample.network
 
+import com.example.opengraphsample.util.Log
+import org.jsoup.HttpStatusException
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 
 object CrawlingTask {
@@ -16,6 +17,8 @@ object CrawlingTask {
             } ?: run {
                 return null
             }
+        } catch (httpException: HttpStatusException) {
+            Log.e("http exception!! ${httpException.message}")
         } catch(e: Exception) { e.printStackTrace() }
         return elements
     }

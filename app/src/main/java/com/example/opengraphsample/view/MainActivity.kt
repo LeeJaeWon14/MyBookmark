@@ -15,16 +15,14 @@ import com.example.opengraphsample.Constants
 import com.example.opengraphsample.R
 import com.example.opengraphsample.adapter.OgListAdapter
 import com.example.opengraphsample.databinding.ActivityMainBinding
+import com.example.opengraphsample.databinding.LayoutProgressDialogBinding
 import com.example.opengraphsample.databinding.LayoutSettingDialogBinding
 import com.example.opengraphsample.network.CrawlingTask
 import com.example.opengraphsample.repository.room.MyRoomDatabase
 import com.example.opengraphsample.repository.room.OgEntity
 import com.example.opengraphsample.util.Log
 import com.example.opengraphsample.util.Pref
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -44,6 +42,8 @@ class MainActivity : AppCompatActivity() {
                 manager.hideSoftInputFromWindow(currentFocus?.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
                 url = getUrl(edtInputLink.text.toString().trim())
                 Log.e("url is $url")
+                val progressDlg = getProgressDialog()
+                progressDlg.show()
                 CoroutineScope(Dispatchers.IO).launch {
                     val elements = CrawlingTask.getElements(url)
                     elements?.let {
@@ -103,6 +103,7 @@ class MainActivity : AppCompatActivity() {
                         MyRoomDatabase.getInstance(this@MainActivity).getOgDAO().getOg()
                     )
                 }
+                progressDlg.dismiss()
                 edtInputLink.setText("")
             }
 
@@ -184,5 +185,15 @@ class MainActivity : AppCompatActivity() {
     private fun getUrl(url: String) : String {
         return if(url.contains("http://") || url.contains("https://")) url
                 else "https://".plus(url)
+    }
+
+
+    private fun getProgressDialog() : AlertDialog {
+        val dlg = AlertDialog.Builder(this).create()
+        val dlgBinding = LayoutProgressDialogBinding.inflate(layoutInflater)
+        return dlg.apply {
+            setView(dlgBinding.root)
+            setCancelable(false)
+        }
     }
 }
