@@ -41,9 +41,6 @@ class MainActivity : AppCompatActivity() {
             btnAddLink.setOnClickListener {
                 manager.hideSoftInputFromWindow(currentFocus?.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
                 url = getUrl(edtInputLink.text.toString().trim())
-                Log.e("url is $url")
-                val progressDlg = getProgressDialog()
-                progressDlg.show()
                 CoroutineScope(Dispatchers.IO).launch {
                     val elements = CrawlingTask.getElements(url)
                     elements?.let {
@@ -103,7 +100,6 @@ class MainActivity : AppCompatActivity() {
                         MyRoomDatabase.getInstance(this@MainActivity).getOgDAO().getOg()
                     )
                 }
-                progressDlg.dismiss()
                 edtInputLink.setText("")
             }
 
@@ -188,12 +184,15 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun getProgressDialog() : AlertDialog {
-        val dlg = AlertDialog.Builder(this).create()
-        val dlgBinding = LayoutProgressDialogBinding.inflate(layoutInflater)
-        return dlg.apply {
-            setView(dlgBinding.root)
-            setCancelable(false)
+    private suspend fun checkDistinctUrl(url: String) : Boolean {
+        val deferred = CoroutineScope(Dispatchers.IO).async {
+            val entity = MyRoomDatabase.getInstance(this@MainActivity).getOgDAO()
+                .checkDistinct(url)
+            Log.e(entity.toString())
+            entity != null
         }
+
+        Log.e(deferred.await().toString())
+        return deferred.await()
     }
 }

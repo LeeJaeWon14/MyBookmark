@@ -19,4 +19,6 @@ interface OgDAO {
     @Query("SELECT * FROM OgEntity ORDER BY id DESC LIMIT :loadSize OFFSET :page * :loadSize")
     fun getOgPage(page: Int, loadSize: Int) : List<OgEntity>
 
+    @Query("SELECT * FROM OgEntity WHERE url = :url")
+    fun checkDistinct(url: String) : OgEntity?
 }
