@@ -26,7 +26,6 @@ import kotlinx.coroutines.*
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-    private val ogMap: HashMap<String, String> = HashMap()
     private val ogList: MutableLiveData<List<OgEntity>> by lazy { MutableLiveData<List<OgEntity>>() }
     private lateinit var manager: InputMethodManager
     private var url: String = ""
@@ -41,6 +40,7 @@ class MainActivity : AppCompatActivity() {
             btnAddLink.setOnClickListener {
                 manager.hideSoftInputFromWindow(currentFocus?.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
                 url = getUrl(edtInputLink.text.toString().trim())
+                val ogMap: HashMap<String, String> = HashMap()
                 CoroutineScope(Dispatchers.IO).launch {
                     val elements = CrawlingTask.getElements(url)
                     elements?.let {

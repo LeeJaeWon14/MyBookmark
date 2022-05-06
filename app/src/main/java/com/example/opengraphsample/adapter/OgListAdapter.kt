@@ -1,5 +1,6 @@
 package com.example.opengraphsample.adapter
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -11,6 +12,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.opengraphsample.R
@@ -71,38 +73,55 @@ class OgListAdapter(private val _ogList: List<OgEntity>) : RecyclerView.Adapter<
                         itemView.context.startActivity(intent)
                     }
 
-//                Toast.makeText(itemView.context, ogList[position].url, Toast.LENGTH_SHORT).show()
                 }
-                setOnLongClickListener {
-                    AlertDialog.Builder(itemView.context)
-                            .setMessage(itemView.context.getString(R.string.str_delete_confirm))
-                            .setPositiveButton("삭제") { _, _ ->
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    undoMap.apply {
-                                        put("position", position)
-                                        put("og", ogList[position])
-                                    }
-                                    MyRoomDatabase.getInstance(itemView.context).getOgDAO()
-                                            .deleteOg(ogList[position])
-                                    ogList.removeAt(position)
+                setOnLongClickListener { view ->
+                    val popup = PopupMenu(itemView.context, view)
+                    (itemView.context as Activity).menuInflater.inflate(R.menu.menu_list_pop_up, popup.menu)
+                    popup.setOnMenuItemClickListener {
+                        when(it.itemId) {
+                            R.id.menu_share -> {
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, ogList[position].url)
                                 }
-                                notifyDataSetChanged()
-                                Snackbar.make(it, itemView.context.getString(R.string.str_delete_success), Snackbar.LENGTH_SHORT)
-                                        .setAction(itemView.context.getString(R.string.str_undo_delete)) {
-                                            val pos = undoMap.get("position") as Int
-                                            val og = undoMap.get("og") as OgEntity
+                                itemView.context.startActivity(Intent.createChooser(intent, ogList[position].url))
+                            }
+                            R.id.menu_remove -> {
+                                AlertDialog.Builder(itemView.context)
+                                        .setMessage(itemView.context.getString(R.string.str_delete_confirm))
+                                        .setPositiveButton("삭제") { _, _ ->
                                             CoroutineScope(Dispatchers.IO).launch {
+                                                undoMap.apply {
+                                                    put("position", position)
+                                                    put("og", ogList[position])
+                                                }
                                                 MyRoomDatabase.getInstance(itemView.context).getOgDAO()
-                                                        .insertOg(og)
+                                                        .deleteOg(ogList[position])
+                                                ogList.removeAt(position)
                                             }
-                                            ogList.add(pos, og)
                                             notifyDataSetChanged()
+                                            Snackbar.make(view, itemView.context.getString(R.string.str_delete_success), Snackbar.LENGTH_SHORT)
+                                                    .setAction(itemView.context.getString(R.string.str_undo_delete)) {
+                                                        val pos = undoMap.get("position") as Int
+                                                        val og = undoMap.get("og") as OgEntity
+                                                        CoroutineScope(Dispatchers.IO).launch {
+                                                            MyRoomDatabase.getInstance(itemView.context).getOgDAO()
+                                                                    .insertOg(og)
+                                                        }
+                                                        ogList.add(pos, og)
+                                                        notifyDataSetChanged()
+                                                    }
+                                                    .show()
                                         }
+                                        .setNegativeButton("취소", null)
+                                        .setCancelable(false)
                                         .show()
                             }
-                            .setNegativeButton("취소", null)
-                            .setCancelable(false)
-                            .show()
+                        }
+                        return@setOnMenuItemClickListener true
+                    }
+                    popup.show()
+
 
                     true
                 }
