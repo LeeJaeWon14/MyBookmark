@@ -5,7 +5,8 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.inputmethod.InputMethodManager
-import android.widget.*
+import android.widget.CompoundButton
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.MutableLiveData
@@ -15,7 +16,6 @@ import com.example.opengraphsample.Constants
 import com.example.opengraphsample.R
 import com.example.opengraphsample.adapter.OgListAdapter
 import com.example.opengraphsample.databinding.ActivityMainBinding
-import com.example.opengraphsample.databinding.LayoutProgressDialogBinding
 import com.example.opengraphsample.databinding.LayoutSettingDialogBinding
 import com.example.opengraphsample.network.CrawlingTask
 import com.example.opengraphsample.repository.room.MyRoomDatabase
@@ -36,7 +36,20 @@ class MainActivity : AppCompatActivity() {
 
         manager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
 
+        initUi()
+        ogList.observe(this@MainActivity, Observer {
+            updateList(it, true)
+        })
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        shareAction(intent)
+    }
+
+    private fun initUi() {
         binding.apply {
+            rvLinkList.layoutManager = LinearLayoutManager(this@MainActivity)
             btnAddLink.setOnClickListener {
                 manager.hideSoftInputFromWindow(currentFocus?.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
                 url = getUrl(edtInputLink.text.toString().trim())
@@ -110,19 +123,18 @@ class MainActivity : AppCompatActivity() {
                     updateList(itemList)
                 }
             }
-
-
-            ogList.observe(this@MainActivity, Observer {
-                updateList(it)
-            })
         }
-
-        shareAction()
     }
 
-    private fun updateList(list: List<OgEntity>) {
+    private fun updateList(list: List<OgEntity>, isAdd: Boolean = false) {
         supportActionBar?.title = String.format(getString(R.string.str_toolbar_title), list.count())
-        binding.rvLinkList.adapter = OgListAdapter(list)
+        binding.rvLinkList.run {
+            adapter = OgListAdapter(list)
+            scrollToPosition(adapter?.itemCount!! -1)
+        }
+
+        if(isAdd)
+            Toast.makeText(this@MainActivity, getString(R.string.str_add_success), Toast.LENGTH_SHORT).show()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -168,14 +180,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun getSiteName(url: String) : String = url.split("://")[1].split("/")[0]
 
-    private fun shareAction() {
-        when(intent.action) {
-            Intent.ACTION_SEND -> {
-                if(intent.type == "text/plain") {
-                    binding.edtInputLink.setText(intent.getStringExtra(Intent.EXTRA_TEXT))
+    private fun shareAction(intent: Intent?) {
+        intent?.let { _intent ->
+            when(_intent.action) {
+                Intent.ACTION_SEND -> {
+                    if(_intent.type == "text/plain") {
+                        binding.edtInputLink.setText(_intent.getStringExtra(Intent.EXTRA_TEXT))
+                    }
                 }
             }
-        }
+        } ?: Toast.makeText(this@MainActivity, getString(R.string.str_unknown_intent), Toast.LENGTH_SHORT).show()
     }
 
     private fun getUrl(url: String) : String {
