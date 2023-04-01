@@ -40,6 +40,7 @@ class MainActivity : AppCompatActivity() {
         ogList.observe(this@MainActivity, Observer {
             updateList(it, true)
         })
+        shareAction(intent)
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -146,8 +147,11 @@ class MainActivity : AppCompatActivity() {
         when(item.itemId) {
             R.id.menu_setting -> {
                 val dlgBinding = LayoutSettingDialogBinding.inflate(layoutInflater)
-                val dlg = AlertDialog.Builder(this).create()
-                dlg.setView(dlgBinding.root)
+                val dlg = AlertDialog.Builder(this).create().apply {
+                    setView(dlgBinding.root)
+                    setCancelable(false)
+                    window?.setBackgroundDrawableResource(R.drawable.border)
+                }
 
                 dlgBinding.apply {
                     chkExtBrowserUse.run {
@@ -159,7 +163,6 @@ class MainActivity : AppCompatActivity() {
 
                     btnCloseDialog.setOnClickListener { dlg.dismiss() }
                 }
-                dlg.setCancelable(false)
                 dlg.show()
 
             }
@@ -181,6 +184,7 @@ class MainActivity : AppCompatActivity() {
     private fun getSiteName(url: String) : String = url.split("://")[1].split("/")[0]
 
     private fun shareAction(intent: Intent?) {
+        Log.e("shareAction")
         intent?.let { _intent ->
             when(_intent.action) {
                 Intent.ACTION_SEND -> {
