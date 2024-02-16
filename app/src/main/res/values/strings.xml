@@ -13,6 +13,7 @@
     <string name="str_add_success">추가되었습니다.</string>
 
     <string name="str_menu_setting">설정</string>
+    <string name="str_menu_license">오픈소스 라이센스</string>
     <string name="str_menu_remove">삭제</string>
     <string name="str_menu_share">공유</string>
 </resources>

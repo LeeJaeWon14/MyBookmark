@@ -9,6 +9,7 @@ import android.widget.CompoundButton
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -22,17 +23,25 @@ import com.example.opengraphsample.repository.room.MyRoomDatabase
 import com.example.opengraphsample.repository.room.OgEntity
 import com.example.opengraphsample.util.Log
 import com.example.opengraphsample.util.Pref
-import kotlinx.coroutines.*
+import com.google.android.gms.oss.licenses.OssLicensesActivity
+import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val ogList: MutableLiveData<List<OgEntity>> by lazy { MutableLiveData<List<OgEntity>>() }
     private lateinit var manager: InputMethodManager
     private var url: String = ""
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 
         manager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
 
@@ -62,6 +71,12 @@ class MainActivity : AppCompatActivity() {
                             when(el.attr("property")) {
                                 "og:url" -> {
                                     el.attr("content")?.let { content ->
+                                        if(checkDistinctUrl(content)) {
+                                            withContext(Dispatchers.Main) {
+                                                Toast.makeText(this@MainActivity, "이미 저장된 URL입니다.", Toast.LENGTH_SHORT).show()
+                                            }
+                                            return@launch
+                                        }
                                         ogMap.put(Constants.URL, content)
                                     }
                                 }
@@ -166,6 +181,16 @@ class MainActivity : AppCompatActivity() {
                 dlg.show()
 
             }
+            R.id.menu_oss_lic -> {
+                startActivity(
+                    Intent(this, OssLicensesActivity::class.java)
+                )
+            }
+            R.id.menu_oss_menu -> {
+                startActivity(
+                    Intent(this, OssLicensesMenuActivity::class.java)
+                )
+            }
         }
         return true
     }
@@ -190,6 +215,7 @@ class MainActivity : AppCompatActivity() {
                 Intent.ACTION_SEND -> {
                     if(_intent.type == "text/plain") {
                         binding.edtInputLink.setText(_intent.getStringExtra(Intent.EXTRA_TEXT))
+                        binding.btnAddLink.performClick()
                     }
                 }
             }
@@ -202,15 +228,18 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private suspend fun checkDistinctUrl(url: String) : Boolean {
-        val deferred = CoroutineScope(Dispatchers.IO).async {
-            val entity = MyRoomDatabase.getInstance(this@MainActivity).getOgDAO()
-                .checkDistinct(url)
-            Log.e(entity.toString())
-            entity != null
-        }
-
-        Log.e(deferred.await().toString())
-        return deferred.await()
+    private fun checkDistinctUrl(url: String) : Boolean {
+//        val deferred = CoroutineScope(Dispatchers.IO).async {
+//            val entity = MyRoomDatabase.getInstance(this@MainActivity).getOgDAO()
+//                .checkDistinct(url)
+//            Log.e(entity.toString())
+//            entity != null
+//        }
+//
+//        return deferred.await()
+        val entity = MyRoomDatabase.getInstance(this@MainActivity).getOgDAO()
+            .checkDistinct(url)
+//        Log.e(entity.toString())
+        return entity != null
     }
 }

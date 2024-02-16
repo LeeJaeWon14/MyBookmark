@@ -6,4 +6,12 @@
         android:icon="@drawable/ic_baseline_settings_24"
         android:iconTint="@color/white"
         app:showAsAction="always" />
+
+    <item android:id="@+id/menu_oss_lic"
+        android:title="@string/str_menu_license"
+        app:showAsAction="never" />
+
+    <item android:id="@+id/menu_oss_menu"
+        android:title="라이센스 메뉴"
+        app:showAsAction="never" />
 </menu>
