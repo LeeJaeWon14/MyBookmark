@@ -228,7 +228,7 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun checkDistinctUrl(url: String) : Boolean {
+    private suspend fun checkDistinctUrl(url: String) : Boolean {
 //        val deferred = CoroutineScope(Dispatchers.IO).async {
 //            val entity = MyRoomDatabase.getInstance(this@MainActivity).getOgDAO()
 //                .checkDistinct(url)
@@ -237,9 +237,11 @@ class MainActivity : AppCompatActivity() {
 //        }
 //
 //        return deferred.await()
-        val entity = MyRoomDatabase.getInstance(this@MainActivity).getOgDAO()
-            .checkDistinct(url)
+        val entity = withContext(Dispatchers.IO) {
+            MyRoomDatabase.getInstance(this@MainActivity).getOgDAO()
+                .checkDistinct(url)
 //        Log.e(entity.toString())
+        }
         return entity != null
     }
 }
