@@ -1,40 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".view.MainActivity"
-    android:orientation="vertical"
-    android:padding="10dp">
-
+    android:layout_height="match_parent">
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal" >
-        <EditText
-            android:id="@+id/edt_input_link"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@android:color/transparent"
-            android:maxLines="1"/>
+        android:layout_height="match_parent"
+        tools:context=".view.MainActivity"
+        android:orientation="vertical"
+        android:padding="10dp">
 
-        <Button
-            android:id="@+id/btn_add_link"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="add"
-            android:background="@drawable/ripple_border"/>
+            android:orientation="horizontal" >
+            <EditText
+                android:id="@+id/edt_input_link"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:maxLines="1"/>
+
+            <Button
+                android:id="@+id/btn_add_link"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="add"
+                android:background="@drawable/ripple_border"/>
+        </LinearLayout>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="0.1dp"
+            android:background="@color/black"
+            android:layout_marginBottom="10dp"/>
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_link_list"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
     </LinearLayout>
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="0.1dp"
-        android:background="@color/black"
-        android:layout_marginBottom="10dp"/>
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_link_list"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
 
-</LinearLayout>
+    <Button
+        android:id="@+id/btn_move_top"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:drawableTop="@drawable/baseline_arrow_drop_up_24"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="70dp"
+        android:layout_marginEnd="20dp"
+        android:visibility="gone" />
+    <Button
+        android:id="@+id/btn_move_bottom"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:drawableBottom="@drawable/baseline_arrow_drop_up_24"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="20dp"
+        android:visibility="gone" />
+</RelativeLayout>

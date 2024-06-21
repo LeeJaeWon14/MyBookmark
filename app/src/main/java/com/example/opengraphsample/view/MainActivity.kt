@@ -10,9 +10,9 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Observer
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.opengraphsample.Constants
 import com.example.opengraphsample.R
 import com.example.opengraphsample.adapter.OgListAdapter
@@ -27,14 +27,16 @@ import com.google.android.gms.oss.licenses.OssLicensesActivity
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-    private val ogList: MutableLiveData<List<OgEntity>> by lazy { MutableLiveData<List<OgEntity>>() }
     private lateinit var manager: InputMethodManager
     private var url: String = ""
+
+    private var lastScrollTime = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,9 +48,7 @@ class MainActivity : AppCompatActivity() {
         manager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
 
         initUi()
-        ogList.observe(this@MainActivity, Observer {
-            updateList(it, true)
-        })
+
         shareAction(intent)
     }
 
@@ -59,7 +59,58 @@ class MainActivity : AppCompatActivity() {
 
     private fun initUi() {
         binding.apply {
-            rvLinkList.layoutManager = LinearLayoutManager(this@MainActivity)
+            // RecyclerView 초기화
+            CoroutineScope(Dispatchers.IO).launch {
+                val itemList = MyRoomDatabase.getInstance(this@MainActivity).getOgDAO().getOg()
+                withContext(Dispatchers.Main) {
+                    rvLinkList.apply {
+                        layoutManager = LinearLayoutManager(this@MainActivity)
+                        addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                                super.onScrolled(recyclerView, dx, dy)
+
+//                            Log.e("onScrolled.. $lastScrollTime")
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    lastScrollTime += 1
+                                    if(btnMoveTop.isVisible) return@launch
+
+                                    btnMoveTop.isVisible = true
+                                    btnMoveBottom.isVisible = true
+
+                                    CoroutineScope(Dispatchers.Default).launch {
+                                        delay(500)
+//                                    Log.e("Enter default scope..")
+                                        repeat(lastScrollTime) {
+                                            if(lastScrollTime < 0) {
+                                                Log.e("hide button")
+                                                withContext(Dispatchers.Main) {
+                                                    delay(500)
+                                                    btnMoveTop.isVisible = false
+                                                    btnMoveBottom.isVisible = false
+                                                }
+                                                return@launch
+                                            }
+                                            Thread.sleep(100)
+                                            lastScrollTime -= 10
+//                                        Log.e("decrease time.. $lastScrollTime")
+                                        }
+                                    }
+
+
+                                }
+//                            if(dy < 0) {
+//                                // 위 스크롤
+//                                Log.e("Scroll up..")
+//                            } else {
+//                                // 아래 스크롤
+//                                Log.e("Scroll down..")
+//                            }
+                            }
+                        })
+                    }
+                    updateList(itemList)
+                }
+            }
             btnAddLink.setOnClickListener {
                 manager.hideSoftInputFromWindow(currentFocus?.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
                 url = getUrl(edtInputLink.text.toString().trim())
@@ -127,20 +178,20 @@ class MainActivity : AppCompatActivity() {
                             Toast.makeText(this@MainActivity, getString(R.string.str_invalid_url), Toast.LENGTH_SHORT).show()
                         }
                     }
-                    ogList.postValue(
-                        MyRoomDatabase.getInstance(this@MainActivity).getOgDAO().getOg()
-                    )
+//                    ogList.postValue(
+//                        MyRoomDatabase.getInstance(this@MainActivity).getOgDAO().getOg()
+//                    )
+                    // 추가 완료 후 UI 갱신
+                    MyRoomDatabase.getInstance(this@MainActivity).getOgDAO().getOg().also { ogList ->
+                        updateList(ogList, true)
+                    }
                 }
                 edtInputLink.setText("")
             }
 
-            CoroutineScope(Dispatchers.IO).launch {
-                val itemList = MyRoomDatabase.getInstance(this@MainActivity).getOgDAO().getOg()
-                withContext(Dispatchers.Main) {
-                    rvLinkList.layoutManager = LinearLayoutManager(this@MainActivity)
-                    updateList(itemList)
-                }
-            }
+            btnMoveTop.setOnClickListener { rvLinkList.scrollToPosition(0) }
+            btnMoveBottom.setOnClickListener { rvLinkList.scrollToPosition(rvLinkList.adapter?.itemCount?.minus(1) ?: return@setOnClickListener) }
+
         }
     }
 
@@ -148,7 +199,7 @@ class MainActivity : AppCompatActivity() {
         supportActionBar?.title = String.format(getString(R.string.str_toolbar_title), list.count())
         binding.rvLinkList.run {
             adapter = OgListAdapter(list)
-            scrollToPosition(adapter?.itemCount!! -1)
+            scrollToPosition(adapter?.itemCount?.minus(1) ?: return)
         }
 
         if(isAdd)
@@ -238,18 +289,9 @@ class MainActivity : AppCompatActivity() {
 
 
     private suspend fun checkDistinctUrl(url: String) : Boolean {
-//        val deferred = CoroutineScope(Dispatchers.IO).async {
-//            val entity = MyRoomDatabase.getInstance(this@MainActivity).getOgDAO()
-//                .checkDistinct(url)
-//            Log.e(entity.toString())
-//            entity != null
-//        }
-//
-//        return deferred.await()
         val entity = withContext(Dispatchers.IO) {
             MyRoomDatabase.getInstance(this@MainActivity).getOgDAO()
                 .checkDistinct(url)
-//        Log.e(entity.toString())
         }
         return entity != null
     }
