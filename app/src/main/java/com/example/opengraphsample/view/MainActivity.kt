@@ -71,12 +71,12 @@ class MainActivity : AppCompatActivity() {
                             when(el.attr("property")) {
                                 "og:url" -> {
                                     el.attr("content")?.let { content ->
-                                        if(checkDistinctUrl(content)) {
-                                            withContext(Dispatchers.Main) {
-                                                Toast.makeText(this@MainActivity, "이미 저장된 URL입니다.", Toast.LENGTH_SHORT).show()
-                                            }
-                                            return@launch
-                                        }
+//                                        if(checkDistinctUrl(content)) {
+//                                            withContext(Dispatchers.Main) {
+//                                                Toast.makeText(this@MainActivity, "이미 저장된 URL입니다.", Toast.LENGTH_SHORT).show()
+//                                            }
+//                                            return@launch
+//                                        }
                                         ogMap.put(Constants.URL, content)
                                     }
                                 }
@@ -103,7 +103,9 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }
                         }
-                        ogMap.putAll(checkOg(ogMap))
+                        ogMap.putAll(
+                            checkOg(ogMap) ?: return@launch
+                        )
                         lateinit var entity: OgEntity
                         try {
                             entity = OgEntity(ogMap)
@@ -195,7 +197,14 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    private fun checkOg(ogMap: HashMap<String, String>) : HashMap<String, String> {
+    private suspend fun checkOg(ogMap: HashMap<String, String>) : HashMap<String, String>? {
+        val checkUrl = ogMap.get(Constants.URL) ?: return null
+        if(checkDistinctUrl(checkUrl)) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(this@MainActivity, "이미 저장된 URL입니다.", Toast.LENGTH_SHORT).show()
+            }
+            return null
+        }
         ogMap.run {
             put(Constants.URL, get(Constants.URL) ?: url)
             put(Constants.SITE_NAME, get(Constants.SITE_NAME) ?: getSiteName(url))
