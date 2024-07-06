@@ -195,11 +195,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateList(list: List<OgEntity>, isAdd: Boolean = false) {
+    private fun updateList(list: List<OgEntity>, isAdd: Boolean = false) = CoroutineScope(Dispatchers.Main).launch {
         supportActionBar?.title = String.format(getString(R.string.str_toolbar_title), list.count())
         binding.rvLinkList.run {
             adapter = OgListAdapter(list)
-            scrollToPosition(adapter?.itemCount?.minus(1) ?: return)
+            scrollToPosition(adapter?.itemCount?.minus(1) ?: return@launch)
         }
 
         if(isAdd)
