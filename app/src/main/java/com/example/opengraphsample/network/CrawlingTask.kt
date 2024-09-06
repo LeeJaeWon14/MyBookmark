@@ -19,6 +19,7 @@ object CrawlingTask {
             }
         } catch (httpException: HttpStatusException) {
             Log.e("http exception!! ${httpException.message}")
+            return null
         } catch(e: Exception) { e.printStackTrace() }
         return elements
     }
