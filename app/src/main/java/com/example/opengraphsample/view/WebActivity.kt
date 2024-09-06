@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.MenuItem
 import android.webkit.WebSettings
 import androidx.appcompat.app.AppCompatActivity
+import com.example.opengraphsample.Constants
 import com.example.opengraphsample.databinding.ActivityWebBinding
 import com.example.opengraphsample.util.MyClient
 
@@ -15,7 +16,7 @@ class WebActivity : AppCompatActivity() {
         setContentView(binding.root)
         supportActionBar?.run {
             setDisplayHomeAsUpEnabled(true)
-            title = intent.getStringExtra("siteName")
+            title = intent.getStringExtra(Constants.SITE_NAME)
         }
 
         binding.webView.apply {
@@ -29,7 +30,7 @@ class WebActivity : AppCompatActivity() {
                 setSupportZoom(true)
                 textZoom = 95
             }
-            intent.getStringExtra("url")?.let { loadUrl(it) }
+            intent.getStringExtra(Constants.URL)?.let { loadUrl(it) }
         }
     }
 

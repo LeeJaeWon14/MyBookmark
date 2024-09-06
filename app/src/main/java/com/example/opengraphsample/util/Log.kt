@@ -31,6 +31,9 @@ class Log {
             Log.e(TAG, buildLogMsg(message))
         }
 
+        //Print StackTrace
+        fun stackTrace(t: Throwable) = e(Log.getStackTraceString(t))
+
         fun buildLogMsg(message : String) : String {
             val ste = Thread.currentThread().stackTrace[4]
             val sb = StringBuilder()

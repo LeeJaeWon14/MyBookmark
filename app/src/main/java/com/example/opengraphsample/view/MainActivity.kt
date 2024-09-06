@@ -65,6 +65,8 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     rvLinkList.apply {
                         layoutManager = LinearLayoutManager(this@MainActivity)
+
+                        // 최상단, 최하단 이동 버튼 숨김처리 이벤트
                         addOnScrollListener(object : RecyclerView.OnScrollListener() {
                             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                                 super.onScrolled(recyclerView, dx, dy)
@@ -98,13 +100,6 @@ class MainActivity : AppCompatActivity() {
 
 
                                 }
-//                            if(dy < 0) {
-//                                // 위 스크롤
-//                                Log.e("Scroll up..")
-//                            } else {
-//                                // 아래 스크롤
-//                                Log.e("Scroll down..")
-//                            }
                             }
                         })
                     }
@@ -118,51 +113,34 @@ class MainActivity : AppCompatActivity() {
                 CoroutineScope(Dispatchers.IO).launch {
                     val elements = CrawlingTask.getElements(url)
                     elements?.let {
-                        it.forEach { el ->
-                            when(el.attr("property")) {
-                                "og:url" -> {
-                                    el.attr("content")?.let { content ->
-//                                        if(checkDistinctUrl(content)) {
-//                                            withContext(Dispatchers.Main) {
-//                                                Toast.makeText(this@MainActivity, "이미 저장된 URL입니다.", Toast.LENGTH_SHORT).show()
-//                                            }
-//                                            return@launch
-//                                        }
-                                        ogMap.put(Constants.URL, content)
-                                    }
-                                }
-                                "og:site_name" -> {
-                                    el.attr("content")?.let { content ->
-                                        ogMap.put(Constants.SITE_NAME, content)
-                                    }
-                                }
-                                "og:title" -> {
-                                    el.attr("content")?.let { content ->
-                                        ogMap.put(Constants.TITLE, content)
-                                    }
-                                }
-                                "og:description" -> {
-                                    el.attr("content")?.let { content ->
-                                        ogMap.put(Constants.DESCRIPTION, content)
-                                    }
-                                }
-                                "og:image" -> {
-                                    el.attr("content")?.let { content ->
-                                        ogMap.put(Constants.IMAGE, content)
-                                    }
+                        // og:url 태그가 없는 경우가 있어 url 먼저 저장
+                        if(checkDistinctUrl(url)) {
+                            withContext(Dispatchers.Main) { Toast.makeText(this@MainActivity, "이미 저장된 URL입니다.", Toast.LENGTH_SHORT).show() }
+                            return@launch
+                        }
+                        else ogMap.put(Constants.URL, url)
 
-                                }
+                        it.forEach { el ->
+                            Log.e("og property > ${el.attr("property")}")
+                            when(el.attr("property")) {
+//                                "og:url"            -> {
+//
+//                                }
+                                "og:site_name"      -> ogMap.put(Constants.SITE_NAME, el.attr("content") ?: getSiteName(url))
+                                "og:title"          -> ogMap.put(Constants.TITLE, el.attr("content") ?: "제목없음")
+                                "og:description"    -> ogMap.put(Constants.DESCRIPTION, el.attr("content") ?: "설명없음")
+                                "og:image"          -> ogMap.put(Constants.IMAGE, getImageUrl(el.attr("content")) ?: "이미지 없음")
                             }
                         }
-                        ogMap.putAll(
-                            checkOg(ogMap) ?: return@launch
-                        )
+//                        ogMap.putAll(
+//                            checkOg(ogMap) ?: return@launch
+//                        )
                         lateinit var entity: OgEntity
                         try {
                             entity = OgEntity(ogMap)
                         } catch (e: NullPointerException) {
                             Log.e(ogMap.toString())
-                            e.printStackTrace()
+                            Log.stackTrace(e)
                             withContext(Dispatchers.Main) {
                                 Toast.makeText(this@MainActivity, getString(R.string.str_not_supported_og), Toast.LENGTH_SHORT).show()
                             }
@@ -178,9 +156,6 @@ class MainActivity : AppCompatActivity() {
                             Toast.makeText(this@MainActivity, getString(R.string.str_invalid_url), Toast.LENGTH_SHORT).show()
                         }
                     }
-//                    ogList.postValue(
-//                        MyRoomDatabase.getInstance(this@MainActivity).getOgDAO().getOg()
-//                    )
                     // 추가 완료 후 UI 갱신
                     MyRoomDatabase.getInstance(this@MainActivity).getOgDAO().getOg().also { ogList ->
                         updateList(ogList, true)
@@ -189,12 +164,19 @@ class MainActivity : AppCompatActivity() {
                 edtInputLink.setText("")
             }
 
+            // 리스트 최상단 이동 버튼
             btnMoveTop.setOnClickListener { rvLinkList.scrollToPosition(0) }
-            btnMoveBottom.setOnClickListener { rvLinkList.scrollToPosition(rvLinkList.adapter?.itemCount?.minus(1) ?: return@setOnClickListener) }
+            // 리스트 최하단 이동 버튼
+            btnMoveBottom.setOnClickListener {
+                rvLinkList.scrollToPosition(rvLinkList.adapter?.itemCount?.minus(1) ?: return@setOnClickListener)
+            }
 
         }
     }
 
+    /**
+     * Initialize or update adapter of recyclerview
+     */
     private fun updateList(list: List<OgEntity>, isAdd: Boolean = false) = CoroutineScope(Dispatchers.Main).launch {
         supportActionBar?.title = String.format(getString(R.string.str_toolbar_title), list.count())
         binding.rvLinkList.run {
@@ -248,24 +230,6 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    private suspend fun checkOg(ogMap: HashMap<String, String>) : HashMap<String, String>? {
-        val checkUrl = ogMap.get(Constants.URL) ?: return null
-        if(checkDistinctUrl(checkUrl)) {
-            withContext(Dispatchers.Main) {
-                Toast.makeText(this@MainActivity, "이미 저장된 URL입니다.", Toast.LENGTH_SHORT).show()
-            }
-            return null
-        }
-        ogMap.run {
-            put(Constants.URL, get(Constants.URL) ?: url)
-            put(Constants.SITE_NAME, get(Constants.SITE_NAME) ?: getSiteName(url))
-            put(Constants.TITLE, get(Constants.TITLE) ?: "제목없음")
-            put(Constants.DESCRIPTION, get(Constants.DESCRIPTION) ?: "설명없음")
-            put(Constants.IMAGE, get(Constants.IMAGE) ?: "이미지 없음")
-        }
-        return ogMap
-    }
-
     private fun getSiteName(url: String) : String = url.split("://")[1].split("/")[0]
 
     private fun shareAction(intent: Intent?) {
@@ -295,4 +259,9 @@ class MainActivity : AppCompatActivity() {
         }
         return entity != null
     }
+
+    private fun getImageUrl(url: String) =
+        if (!url.startsWith("https") || !url.startsWith("http")) {
+            "https:".plus(url)
+        } else url
 }

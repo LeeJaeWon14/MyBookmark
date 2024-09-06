@@ -15,6 +15,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.example.opengraphsample.Constants
 import com.example.opengraphsample.R
 import com.example.opengraphsample.repository.room.MyRoomDatabase
 import com.example.opengraphsample.repository.room.OgEntity
@@ -67,8 +68,8 @@ class OgListAdapter(private val _ogList: List<OgEntity>) : RecyclerView.Adapter<
                     }
                     else {
                         val intent = Intent(itemView.context, WebActivity::class.java).apply {
-                            putExtra("url", ogList[position].url)
-                            putExtra("siteName", ogList[position].siteName)
+                            putExtra(Constants.URL, ogList[position].url)
+                            putExtra(Constants.SITE_NAME, ogList[position].siteName)
                         }
                         itemView.context.startActivity(intent)
                     }

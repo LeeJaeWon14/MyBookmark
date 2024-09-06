@@ -28,10 +28,10 @@ data class OgEntity(
 ) {
     constructor(ogMap: HashMap<String, String>) : this(
         0,
-        ogMap.get(Constants.URL)!!,
-        ogMap.get(Constants.SITE_NAME)!!,
-        ogMap.get(Constants.TITLE)!!,
-        ogMap.get(Constants.DESCRIPTION)!!,
-        ogMap.get(Constants.IMAGE)!!
+        ogMap.get(Constants.URL) ?: "",
+        ogMap.get(Constants.SITE_NAME) ?: "",
+        ogMap.get(Constants.TITLE) ?: "",
+        ogMap.get(Constants.DESCRIPTION) ?: "",
+        ogMap.get(Constants.IMAGE) ?: ""
     )
 }
