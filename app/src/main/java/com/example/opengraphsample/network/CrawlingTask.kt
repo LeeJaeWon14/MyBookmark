@@ -13,7 +13,8 @@ object CrawlingTask {
         try {
             document = Jsoup.connect(url).get()
             document?.let {
-                elements = document.select("meta[property^=og:]")
+//                elements = document.select("meta[property^=og:]")
+                elements = document.select("meta[property]")
             } ?: run {
                 return null
             }
