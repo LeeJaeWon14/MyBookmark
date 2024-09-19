@@ -5,18 +5,25 @@ import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.Toast
 import com.example.opengraphsample.R
+import com.example.opengraphsample.view.WebActivity
 
 class MyClient : WebViewClient() {
     override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
         super.onPageStarted(view, url, favicon)
-        Log.e("page start, url is $url")
+        Log.e("${url}\nload finish!")
     }
+
+    override fun onPageFinished(view: WebView?, url: String?) {
+        super.onPageFinished(view, url)
+        Log.e("${url}\nload finish!")
+        (view?.context as WebActivity).title = view.title
+    }
+
     override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
         super.onReceivedError(view, request, error)
 
-        Toast.makeText(view?.context, "Error!, code is ${error?.errorCode}", Toast.LENGTH_SHORT).show()
+//        Toast.makeText(view?.context, "Error!, code is ${error?.errorCode}", Toast.LENGTH_SHORT).show()
         Log.e("code is ${error?.errorCode} and description is ${error?.description}")
         Log.e("request is here, ${request?.requestHeaders?.toString()}")
 

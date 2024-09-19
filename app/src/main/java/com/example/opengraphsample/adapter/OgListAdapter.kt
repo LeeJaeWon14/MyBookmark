@@ -63,13 +63,14 @@ class OgListAdapter(private val _ogList: List<OgEntity>) : RecyclerView.Adapter<
                     if(ogList[position].url == "")
                         return@setOnClickListener
                     if(checkedUseExtBrowser()) {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(ogList[position].url))
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(ogList[position].url)).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
                         itemView.context.startActivity(intent)
                     }
                     else {
                         val intent = Intent(itemView.context, WebActivity::class.java).apply {
                             putExtra(Constants.URL, ogList[position].url)
-                            putExtra(Constants.SITE_NAME, ogList[position].siteName)
                         }
                         itemView.context.startActivity(intent)
                     }
