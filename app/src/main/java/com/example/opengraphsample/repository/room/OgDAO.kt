@@ -1,6 +1,10 @@
 package com.example.opengraphsample.repository.room
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.Query
+import androidx.room.Update
 
 @Dao
 interface OgDAO {
@@ -19,6 +23,6 @@ interface OgDAO {
     @Query("SELECT * FROM OgEntity ORDER BY id DESC LIMIT :loadSize OFFSET :page * :loadSize")
     fun getOgPage(page: Int, loadSize: Int) : List<OgEntity>
 
-    @Query("SELECT * FROM OgEntity WHERE url = :url")
-    fun checkDistinct(url: String) : OgEntity?
+    @Query("SELECT * FROM OgEntity WHERE title = :title")
+    fun checkDistinct(title: String) : OgEntity?
 }

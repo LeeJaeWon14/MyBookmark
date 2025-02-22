@@ -1,7 +1,10 @@
 package com.example.opengraphsample.view
 
+import android.content.ClipboardManager
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.Menu
 import android.view.MenuItem
 import android.view.inputmethod.InputMethodManager
@@ -25,6 +28,7 @@ import com.example.opengraphsample.util.Log
 import com.example.opengraphsample.util.Pref
 import com.google.android.gms.oss.licenses.OssLicensesActivity
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -37,6 +41,14 @@ class MainActivity : AppCompatActivity() {
     private var url: String = ""
 
     private var lastScrollTime = 1
+
+    private val addItemExceptionHandler = CoroutineExceptionHandler { _, e ->
+        when (e) {
+            is Exception -> {
+
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,68 +69,99 @@ class MainActivity : AppCompatActivity() {
         shareAction(intent)
     }
 
+    override fun onResume() {
+        super.onResume()
+        Log.e("onResume()")
+
+        // 클립보드에서 가져오기
+        val clipManager = getSystemService(ClipboardManager::class.java)
+        Handler(Looper.getMainLooper()).post {
+            clipManager.primaryClip?.getItemAt(0)?.let { item ->
+                Log.e("clip item is.. ${item.text}")
+
+                if(item.text.matches("^((http|https)://)?([a-zA-Z0-9.-]+)\\.([a-z]+)(/[a-zA-Z0-9._~:/?#@!$&'()*+,;=-]*)?$".toRegex())) {
+//                    Snackbar.make(binding.btnAddLink, "클립보드에서 가져오시겠습니까?", Snackbar.LENGTH_SHORT)
+//                        .setAction("가져오기") {
+//                            binding.btnAddLink.performClick()
+//                        }
+//                        .show()
+
+
+                    AlertDialog.Builder(this)
+                        .setTitle("클립보드에서 URL이 감지됨")
+                        .setMessage("클립보드에서 아래 URL을 추가하겠습니까?\r\n\r\n${item.text}")
+                        .setPositiveButton("예") { _, _ ->
+                            binding.btnAddLink.performClick()
+                        }
+                        .setNegativeButton("아니오", null)
+                        .setCancelable(false)
+                        .show()
+                }
+
+            }
+        }
+    }
+
     private fun initUi() {
         binding.apply {
             // RecyclerView 초기화
-            CoroutineScope(Dispatchers.IO).launch {
-                val itemList = MyRoomDatabase.getInstance(this@MainActivity).getOgDAO().getOg()
-                withContext(Dispatchers.Main) {
-                    rvLinkList.apply {
-                        layoutManager = LinearLayoutManager(this@MainActivity)
+            rvLinkList.apply {
+                layoutManager = LinearLayoutManager(this@MainActivity)
 
-                        // 최상단, 최하단 이동 버튼 숨김처리 이벤트
-                        addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                                super.onScrolled(recyclerView, dx, dy)
+                // 최상단, 최하단 이동 버튼 숨김처리 이벤트
+                addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                    override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                        super.onScrolled(recyclerView, dx, dy)
 
 //                            Log.e("onScrolled.. $lastScrollTime")
-                                CoroutineScope(Dispatchers.Main).launch {
-                                    lastScrollTime += 1
-                                    if(btnMoveTop.isVisible) return@launch
+                        CoroutineScope(Dispatchers.Main).launch {
+                            lastScrollTime += 1
+                            if(btnMoveTop.isVisible) return@launch
 
-                                    btnMoveTop.isVisible = true
-                                    btnMoveBottom.isVisible = true
+                            btnMoveTop.isVisible = true
+                            btnMoveBottom.isVisible = true
 
-                                    CoroutineScope(Dispatchers.Default).launch {
-                                        delay(500)
+                            CoroutineScope(Dispatchers.Default).launch {
+                                delay(500)
 //                                    Log.e("Enter default scope..")
-                                        repeat(lastScrollTime) {
-                                            if(lastScrollTime < 0) {
-                                                Log.e("hide button")
-                                                withContext(Dispatchers.Main) {
-                                                    delay(500)
-                                                    btnMoveTop.isVisible = false
-                                                    btnMoveBottom.isVisible = false
-                                                }
-                                                return@launch
-                                            }
-                                            Thread.sleep(100)
-                                            lastScrollTime -= 10
-//                                        Log.e("decrease time.. $lastScrollTime")
+                                repeat(lastScrollTime) {
+                                    if(lastScrollTime < 0) {
+                                        Log.e("hide button")
+                                        withContext(Dispatchers.Main) {
+                                            delay(500)
+                                            btnMoveTop.isVisible = false
+                                            btnMoveBottom.isVisible = false
                                         }
+                                        return@launch
                                     }
-
-
+                                    Thread.sleep(100)
+                                    lastScrollTime -= 10
+//                                        Log.e("decrease time.. $lastScrollTime")
                                 }
                             }
-                        })
+
+
+                        }
                     }
-                    updateList(itemList)
+                })
+
+                CoroutineScope(Dispatchers.IO).launch {
+                    updateList(
+                        MyRoomDatabase.getInstance(this@MainActivity).getOgDAO().getOg()
+                    )
                 }
             }
+
             btnAddLink.setOnClickListener {
                 manager.hideSoftInputFromWindow(currentFocus?.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
                 url = getUrl(edtInputLink.text.toString().trim())
                 val ogMap: HashMap<String, String> = HashMap()
+
                 CoroutineScope(Dispatchers.IO).launch {
                     val elements = CrawlingTask.getElements(url)
                     elements?.let {
                         // og:url 태그가 없는 경우가 있어 url 먼저 저장
-                        if(checkDistinctUrl(url)) {
-                            withContext(Dispatchers.Main) { Toast.makeText(this@MainActivity, "이미 저장된 URL입니다.", Toast.LENGTH_SHORT).show() }
-                            return@launch
-                        }
-                        else ogMap.put(Constants.URL, url)
+                        ogMap.put(Constants.URL, url)
 
                         it.forEach { el ->
                             Log.e("og property > ${el.attr("property")}")
@@ -127,9 +170,16 @@ class MainActivity : AppCompatActivity() {
 //
 //                                }
                                 "og:site_name"      -> ogMap.put(Constants.SITE_NAME, el.attr("content") ?: getSiteName(url))
-                                "og:title"          -> ogMap.put(Constants.TITLE, el.attr("content") ?: "제목없음")
+                                "og:title"          -> {
+                                    // title로 중복 체크
+                                    if(checkDistinctUrl(el.attr("content"))) {
+                                        withContext(Dispatchers.Main) { Toast.makeText(this@MainActivity, "이미 저장된 URL입니다.", Toast.LENGTH_SHORT).show() }
+                                        return@launch
+                                    }
+                                    ogMap.put(Constants.TITLE, el.attr("content") ?: "제목없음")
+                                }
                                 "og:description"    -> ogMap.put(Constants.DESCRIPTION, el.attr("content") ?: "설명없음")
-                                "og:image"          -> ogMap.put(Constants.IMAGE, getImageUrl(el.attr("content")) ?: "이미지 없음")
+                                "og:image"          -> ogMap.put(Constants.IMAGE, el.attr("content") ?: "이미지 없음")
                             }
                         }
 //                        ogMap.putAll(
@@ -151,14 +201,16 @@ class MainActivity : AppCompatActivity() {
                         Log.e(entity.toString())
                         MyRoomDatabase.getInstance(this@MainActivity).getOgDAO()
                             .insertOg(entity)
+
+                        // 추가 완료 후 UI 갱신
+                        MyRoomDatabase.getInstance(this@MainActivity).getOgDAO().getOg().also { ogList ->
+                            updateList(ogList, true)
+                        }
+
                     } ?: run {
                         withContext(Dispatchers.Main) {
                             Toast.makeText(this@MainActivity, getString(R.string.str_invalid_url), Toast.LENGTH_SHORT).show()
                         }
-                    }
-                    // 추가 완료 후 UI 갱신
-                    MyRoomDatabase.getInstance(this@MainActivity).getOgDAO().getOg().also { ogList ->
-                        updateList(ogList, true)
                     }
                 }
                 edtInputLink.setText("")
@@ -252,16 +304,9 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private suspend fun checkDistinctUrl(url: String) : Boolean {
-        val entity = withContext(Dispatchers.IO) {
-            MyRoomDatabase.getInstance(this@MainActivity).getOgDAO()
-                .checkDistinct(url)
-        }
-        return entity != null
+    private suspend fun checkDistinctUrl(title: String): Boolean = withContext(Dispatchers.IO) {
+        val entity = MyRoomDatabase.getInstance(this@MainActivity).getOgDAO()
+            .checkDistinct(title)
+        entity != null
     }
-
-    private fun getImageUrl(url: String) =
-        if (!url.startsWith("https") || !url.startsWith("http")) {
-            "https:".plus(url)
-        } else url
 }
