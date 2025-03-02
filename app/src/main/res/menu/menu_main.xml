@@ -7,11 +7,15 @@
         android:iconTint="@color/white"
         app:showAsAction="always" />
 
-    <item android:id="@+id/menu_oss_lic"
+    <item android:id="@+id/menu_oss_menu"
         android:title="@string/str_menu_license"
         app:showAsAction="never" />
 
-    <item android:id="@+id/menu_oss_menu"
-        android:title="라이센스 메뉴"
+    <item android:id="@+id/menu_backup"
+        android:title="데이터 백업"
+        app:showAsAction="never" />
+
+    <item android:id="@+id/menu_restore"
+        android:title="데이터 복원"
         app:showAsAction="never" />
 </menu>

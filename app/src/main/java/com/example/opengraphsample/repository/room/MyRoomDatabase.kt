@@ -22,9 +22,15 @@ abstract class MyRoomDatabase : RoomDatabase() {
                     "OpenGraph.db"
                 )/*.addMigrations(MIGRATION_TO_2)*/
                         .fallbackToDestructiveMigration()
+//                    .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
                         .build() // Will adding migration
                 return instance!!
             }
+        }
+
+        fun closeDatabase() {
+            instance?.close()
+            instance = null
         }
 
 //        private val MIGRATION_TO_2 = object : Migration(2, 3) {

@@ -2,6 +2,7 @@ package com.example.opengraphsample.view
 
 import android.content.ClipboardManager
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -10,6 +11,8 @@ import android.view.MenuItem
 import android.view.inputmethod.InputMethodManager
 import android.widget.CompoundButton
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -24,10 +27,11 @@ import com.example.opengraphsample.databinding.LayoutSettingDialogBinding
 import com.example.opengraphsample.network.CrawlingTask
 import com.example.opengraphsample.repository.room.MyRoomDatabase
 import com.example.opengraphsample.repository.room.OgEntity
+import com.example.opengraphsample.util.DatabaseBackupHelper
 import com.example.opengraphsample.util.Log
 import com.example.opengraphsample.util.Pref
-import com.google.android.gms.oss.licenses.OssLicensesActivity
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,6 +45,8 @@ class MainActivity : AppCompatActivity() {
     private var url: String = ""
 
     private var lastScrollTime = 1
+
+    private lateinit var safLauncher: ActivityResultLauncher<String>
 
     private val addItemExceptionHandler = CoroutineExceptionHandler { _, e ->
         when (e) {
@@ -62,6 +68,21 @@ class MainActivity : AppCompatActivity() {
         initUi()
 
         shareAction(intent)
+
+        safLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) {
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && DatabaseBackupHelper.restoreDatabase(this@MainActivity, it)) {
+                Toast.makeText(this@MainActivity, "복원 성공!", Toast.LENGTH_SHORT).show()
+//                CoroutineScope(Dispatchers.IO).launch {
+//                    updateList(
+//                        MyRoomDatabase.getInstance(this@MainActivity).getOgDAO().getOg()
+//                    )
+//                }
+                startActivity(Intent(this@MainActivity, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                })
+            } else
+                Toast.makeText(this@MainActivity, "복원 실패", Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -77,29 +98,39 @@ class MainActivity : AppCompatActivity() {
         val clipManager = getSystemService(ClipboardManager::class.java)
         Handler(Looper.getMainLooper()).post {
             clipManager.primaryClip?.getItemAt(0)?.let { item ->
-                Log.e("clip item is.. ${item.text}")
+//                Log.e("clip item is.. ${item.text}")
 
                 if(item.text.matches("^((http|https)://)?([a-zA-Z0-9.-]+)\\.([a-z]+)(/[a-zA-Z0-9._~:/?#@!$&'()*+,;=-]*)?$".toRegex())) {
-//                    Snackbar.make(binding.btnAddLink, "클립보드에서 가져오시겠습니까?", Snackbar.LENGTH_SHORT)
-//                        .setAction("가져오기") {
-//                            binding.btnAddLink.performClick()
-//                        }
-//                        .show()
-
-
-                    AlertDialog.Builder(this)
-                        .setTitle("클립보드에서 URL이 감지됨")
-                        .setMessage("클립보드에서 아래 URL을 추가하겠습니까?\r\n\r\n${item.text}")
-                        .setPositiveButton("예") { _, _ ->
+                    Snackbar.make(binding.btnAddLink, "클립보드에서 가져오시겠습니까?", Snackbar.LENGTH_LONG)
+                        .setAction("가져오기") {
                             binding.btnAddLink.performClick()
                         }
-                        .setNegativeButton("아니오", null)
-                        .setCancelable(false)
                         .show()
+
+
+//                    AlertDialog.Builder(this)
+//                        .setTitle("클립보드에서 URL이 감지됨")
+//                        .setMessage("클립보드에서 아래 URL을 추가하겠습니까?\r\n\r\n${item.text}")
+//                        .setPositiveButton("예") { _, _ ->
+//                            binding.btnAddLink.performClick()
+//                        }
+//                        .setNegativeButton("아니오", null)
+//                        .setCancelable(false)
+//                        .show()
                 }
 
             }
         }
+    }
+
+    override fun onPause() {
+        Log.e("onPause")
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        Log.e("onDestroy()")
+        super.onDestroy()
     }
 
     private fun initUi() {
@@ -268,15 +299,22 @@ class MainActivity : AppCompatActivity() {
                 dlg.show()
 
             }
-            R.id.menu_oss_lic -> {
-                startActivity(
-                    Intent(this, OssLicensesActivity::class.java)
-                )
-            }
             R.id.menu_oss_menu -> {
                 startActivity(
                     Intent(this, OssLicensesMenuActivity::class.java)
                 )
+            }
+            R.id.menu_backup -> {
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && DatabaseBackupHelper.backupDatabase(this)) {
+                    Toast.makeText(this, "다운로드 폴더에 저장되었습니다.", Toast.LENGTH_SHORT).show()
+                }
+            }
+            R.id.menu_restore -> {
+//                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && DatabaseBackupHelper.restoreDatabase(this)) {
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    Toast.makeText(this, "db 파일을 찾아주세요.", Toast.LENGTH_SHORT).show()
+                    safLauncher.launch("*/*")
+                }
             }
         }
         return true
