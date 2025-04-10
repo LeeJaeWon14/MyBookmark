@@ -11,11 +11,14 @@ object CrawlingTask {
         var document: Document? = null
         var elements: Elements? = null
         try {
-            document = Jsoup.connect(url).get()
+            document = Jsoup.connect(url)
+                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+                .followRedirects(true)
+                .get()
             document?.let {
-//                elements = document.select("meta[property^=og:]")
-                elements = document.select("meta[property]")
+                elements = document.select("meta[property^=og:]")
             } ?: run {
+                Log.e("Not found og tag..")
                 return null
             }
         } catch (httpException: HttpStatusException) {
