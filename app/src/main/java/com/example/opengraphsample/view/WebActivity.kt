@@ -1,6 +1,9 @@
 package com.example.opengraphsample.view
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Bundle
 import android.view.MenuItem
 import android.webkit.WebResourceError
@@ -30,9 +33,31 @@ class WebActivity : AppCompatActivity() {
 
         binding.webView.apply {
             webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(
+                    view: WebView?,
+                    request: WebResourceRequest?
+                ): Boolean {
+                    // Intent Scheme 처리 추가
+//                    if(url?.startsWith("intent") == true) {
+//
+//                    }
+                    return url?.startsWith("intent") == true
+                }
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     super.onPageStarted(view, url, favicon)
-                    Log.e("${url}\nload finish!")
+                    Log.e("${url}\nload load!")
+                    
+                    // URL Scheme 처리 추가
+                    if(url?.startsWith("http") == false) {
+                        try {
+                            startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            )
+                            finish()
+                        } catch (e: ActivityNotFoundException) {
+                            Log.e(e.toString())
+                        }
+                    }
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
@@ -55,6 +80,9 @@ class WebActivity : AppCompatActivity() {
                         when(error?.description) {
                             it.context.getString(R.string.str_err_cleartext) -> {
                                 finish()
+                            }
+                            "net::ERR_UNKNOWN_URL_SCHEME" -> {
+                                it.goBack()
                             }
                             else -> {
                                 // not impl.
