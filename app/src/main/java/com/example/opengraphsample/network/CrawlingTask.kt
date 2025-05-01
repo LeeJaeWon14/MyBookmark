@@ -27,4 +27,16 @@ object CrawlingTask {
         } catch(e: Exception) { e.printStackTrace() }
         return elements
     }
+
+    fun getTag(url: String, tag: String) : Elements? {
+        return try {
+            Jsoup.connect(url)
+                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+                .followRedirects(true)
+                .get()
+                .select(tag)
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

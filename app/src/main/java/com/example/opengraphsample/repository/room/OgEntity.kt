@@ -15,16 +15,16 @@ data class OgEntity(
     val url: String,
 
     @ColumnInfo(name = "site_name")
-    val siteName: String,
+    var siteName: String,
 
     @ColumnInfo(name = "title")
-    val title: String,
+    var title: String,
 
     @ColumnInfo(name = "description")
     val description: String,
 
     @ColumnInfo(name = "image")
-    val image: String
+    var image: String
 ) {
     constructor(ogMap: HashMap<String, String>) : this(
         0,

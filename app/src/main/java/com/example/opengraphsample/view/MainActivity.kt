@@ -9,6 +9,8 @@ import android.os.Looper
 import android.view.Menu
 import android.view.MenuItem
 import android.view.inputmethod.InputMethodManager
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.CompoundButton
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
@@ -38,6 +40,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.net.URL
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -90,20 +93,28 @@ class MainActivity : AppCompatActivity() {
         shareAction(intent)
     }
 
+    override fun onStop() {
+        Log.e("onStop()")
+        super.onStop()
+    }
+
     override fun onResume() {
         super.onResume()
         Log.e("onResume()")
 
         // 클립보드에서 가져오기
         val clipManager = getSystemService(ClipboardManager::class.java)
-        Handler(Looper.getMainLooper()).post {
+        Handler(Looper.getMainLooper()).postDelayed({
             clipManager.primaryClip?.getItemAt(0)?.let { item ->
 //                Log.e("clip item is.. ${item.text}")
 
                 if(item.text.matches("^((http|https)://)?([a-zA-Z0-9.-]+)\\.([a-z]+)(/[a-zA-Z0-9._~:/?#@!$&'()*+,;=-]*)?$".toRegex())) {
                     Snackbar.make(binding.btnAddLink, "클립보드에서 가져오시겠습니까?", Snackbar.LENGTH_LONG)
                         .setAction("가져오기") {
-                            binding.btnAddLink.performClick()
+                            binding.run {
+                                edtInputLink.setText(item.text)
+                                btnAddLink.performClick()
+                            }
                         }
                         .show()
 
@@ -119,8 +130,10 @@ class MainActivity : AppCompatActivity() {
 //                        .show()
                 }
 
+            } ?: run {
+                Log.e("Not have clip data")
             }
-        }
+        }, 500)
     }
 
     override fun onPause() {
@@ -197,9 +210,6 @@ class MainActivity : AppCompatActivity() {
                         it.forEach { el ->
                             Log.e("og property > ${el.attr("property")}")
                             when(el.attr("property")) {
-//                                "og:url"            -> {
-//
-//                                }
                                 "og:site_name"      -> ogMap.put(Constants.SITE_NAME, el.attr("content") ?: getSiteName(url))
                                 "og:title"          -> {
                                     // title로 중복 체크
@@ -207,18 +217,19 @@ class MainActivity : AppCompatActivity() {
                                         withContext(Dispatchers.Main) { Toast.makeText(this@MainActivity, "이미 저장된 URL입니다.", Toast.LENGTH_SHORT).show() }
                                         return@launch
                                     }
-                                    ogMap.put(Constants.TITLE, el.attr("content") ?: "제목없음")
+
+                                    ogMap.put(Constants.TITLE, el.attr("content").ifEmpty { CrawlingTask.getTag(url, "title")?.text() ?: "제목없음" })
                                 }
                                 "og:description"    -> ogMap.put(Constants.DESCRIPTION, el.attr("content") ?: "설명없음")
                                 "og:image"          -> ogMap.put(Constants.IMAGE, el.attr("content") ?: "이미지 없음")
                             }
                         }
-//                        ogMap.putAll(
-//                            checkOg(ogMap) ?: return@launch
-//                        )
+
+
                         lateinit var entity: OgEntity
                         try {
-                            entity = OgEntity(ogMap)
+                            entity = checkEmptyAttribute(OgEntity(ogMap))
+//                            entity = checkEmptyAttribute(entity)
                         } catch (e: NullPointerException) {
                             Log.e(ogMap.toString())
                             Log.stackTrace(e)
@@ -258,7 +269,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Initialize or update adapter of recyclerview
+     * Initialize or update for adapter of recyclerview
      */
     private fun updateList(list: List<OgEntity>, isAdd: Boolean = false) = CoroutineScope(Dispatchers.Main).launch {
         supportActionBar?.title = String.format(getString(R.string.str_toolbar_title), list.count())
@@ -320,7 +331,7 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    private fun getSiteName(url: String) : String = url.split("://")[1].split("/")[0]
+    private fun getSiteName(url: String) : String = URL(url).host
 
     private fun shareAction(intent: Intent?) {
         Log.e("shareAction")
@@ -346,5 +357,42 @@ class MainActivity : AppCompatActivity() {
         val entity = MyRoomDatabase.getInstance(this@MainActivity).getOgDAO()
             .checkDistinct(title)
         entity != null
+    }
+
+    private fun madeFaviconUrl(url: String): String = "https://".plus(URL(url).host.plus("/favicon.ico"))
+
+    private suspend fun checkEmptyAttribute(ogEntity: OgEntity) : OgEntity {
+        Log.e("checkEmptyAttribute()")
+        if(ogEntity.title.isEmpty()) {
+            var siteTitle = ""
+
+            // title이 JavaScript에서 동적으로 생성되므로 브릿지 인터페이스를 통해 추출
+            withContext(Dispatchers.Main) {
+                WebView(this@MainActivity).apply {
+                    settings.javaScriptEnabled = true
+                    webViewClient = object : WebViewClient() {
+                        override fun onPageFinished(view: WebView?, url: String?) {
+//                        view?.evaluateJavascript("ScriptHandler.getTitle(document.title);") {
+                            Log.e("Url > $url")
+
+                            view?.evaluateJavascript("document.title;") {
+                                Log.e("Getting title is $it")
+                                siteTitle = it
+                            }
+                        }
+                    }
+                }.loadUrl(ogEntity.url)
+            }
+//            ogEntity.title = CrawlingTask.getTag(ogEntity.url, "title")?.text().orEmpty().also { Log.e("title: $it") }
+            ogEntity.title = siteTitle
+        }
+        if(ogEntity.siteName.isEmpty()) {
+            ogEntity.siteName = getSiteName(ogEntity.url).also { Log.e("site_name: $it") }
+        }
+        if(ogEntity.image.isEmpty()) {
+            ogEntity.image = madeFaviconUrl(ogEntity.url).also { Log.e("image: $it") }
+        }
+
+        return ogEntity
     }
 }
