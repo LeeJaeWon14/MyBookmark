@@ -60,7 +60,7 @@ class OgListAdapter(private val _ogList: List<OgEntity>) : RecyclerView.Adapter<
 
             Glide.with(itemView.context)
                 .load(ogList[position].image)
-                .error(R.drawable.ic_launcher_foreground)
+                .error(R.drawable.ic_url_thumbnail)
                 .listener(object : RequestListener<Drawable> {
                     override fun onLoadFailed(
                         e: GlideException?,

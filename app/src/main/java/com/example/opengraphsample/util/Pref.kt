@@ -10,6 +10,7 @@ class Pref(private val context : Context) {
     companion object {
         const val PREF_DATA = "Preference Test"
         const val USE_EXT_BROWSER = "External browser use"
+        const val USE_CLIP_DATA = "USE_CLIP_DATA"
 
         private var instance : Pref? =null
         @Synchronized

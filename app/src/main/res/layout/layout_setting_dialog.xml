@@ -16,6 +16,17 @@
         android:fontFamily="@font/baemin"
         android:textSize="20dp"
         android:buttonTint="@color/purple_500"
+        android:layout_marginBottom="10dp"
+        tools:checked="true" />
+    <CheckBox
+        android:id="@+id/chk_use_clip_data"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layoutDirection="rtl"
+        android:text="클립보드 사용"
+        android:fontFamily="@font/baemin"
+        android:textSize="20dp"
+        android:buttonTint="@color/purple_500"
         android:layout_marginBottom="50dp"
         tools:checked="true" />
     <Button

@@ -41,6 +41,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.URL
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -73,18 +76,18 @@ class MainActivity : AppCompatActivity() {
         shareAction(intent)
 
         safLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) {
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && DatabaseBackupHelper.restoreDatabase(this@MainActivity, it)) {
-                Toast.makeText(this@MainActivity, "복원 성공!", Toast.LENGTH_SHORT).show()
-//                CoroutineScope(Dispatchers.IO).launch {
-//                    updateList(
-//                        MyRoomDatabase.getInstance(this@MainActivity).getOgDAO().getOg()
-//                    )
-//                }
-                startActivity(Intent(this@MainActivity, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                })
-            } else
-                Toast.makeText(this@MainActivity, "복원 실패", Toast.LENGTH_SHORT).show()
+            try {
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && DatabaseBackupHelper.restoreDatabase(this@MainActivity, it)) {
+                    Toast.makeText(this@MainActivity, "복원 성공!", Toast.LENGTH_SHORT).show()
+
+                    startActivity(Intent(this@MainActivity, MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    })
+                } else
+                    Toast.makeText(this@MainActivity, "복원 실패", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                /* no-op */
+            }
         }
     }
 
@@ -103,20 +106,21 @@ class MainActivity : AppCompatActivity() {
         Log.e("onResume()")
 
         // 클립보드에서 가져오기
-        val clipManager = getSystemService(ClipboardManager::class.java)
-        Handler(Looper.getMainLooper()).postDelayed({
-            clipManager.primaryClip?.getItemAt(0)?.let { item ->
+        if(Pref.getInstance(this)?.getBoolean(Pref.USE_CLIP_DATA) == true) {
+            val clipManager = getSystemService(ClipboardManager::class.java)
+            Handler(Looper.getMainLooper()).postDelayed({
+                clipManager.primaryClip?.getItemAt(0)?.let { item ->
 //                Log.e("clip item is.. ${item.text}")
 
-                if(item.text.matches("^((http|https)://)?([a-zA-Z0-9.-]+)\\.([a-z]+)(/[a-zA-Z0-9._~:/?#@!$&'()*+,;=-]*)?$".toRegex())) {
-                    Snackbar.make(binding.btnAddLink, "클립보드에서 가져오시겠습니까?", Snackbar.LENGTH_LONG)
-                        .setAction("가져오기") {
-                            binding.run {
-                                edtInputLink.setText(item.text)
-                                btnAddLink.performClick()
+                    if(item.text.matches("^((http|https)://)?([a-zA-Z0-9.-]+)\\.([a-z]+)(/[a-zA-Z0-9._~:/?#@!$&'()*+,;=-]*)?$".toRegex())) {
+                        Snackbar.make(binding.btnAddLink, "클립보드에서 가져오시겠습니까?", Snackbar.LENGTH_LONG)
+                            .setAction("가져오기") {
+                                binding.run {
+                                    edtInputLink.setText(item.text)
+                                    btnAddLink.performClick()
+                                }
                             }
-                        }
-                        .show()
+                            .show()
 
 
 //                    AlertDialog.Builder(this)
@@ -128,12 +132,14 @@ class MainActivity : AppCompatActivity() {
 //                        .setNegativeButton("아니오", null)
 //                        .setCancelable(false)
 //                        .show()
-                }
+                    }
 
-            } ?: run {
-                Log.e("Not have clip data")
-            }
-        }, 500)
+                } ?: run {
+                    Log.e("Not have clip data")
+                }
+            }, 500)
+        }
+
     }
 
     override fun onPause() {
@@ -201,6 +207,9 @@ class MainActivity : AppCompatActivity() {
                 url = getUrl(edtInputLink.text.toString().trim())
                 val ogMap: HashMap<String, String> = HashMap()
 
+                // Progress 출력
+                visibleProgressBar(true)
+
                 CoroutineScope(Dispatchers.IO).launch {
                     val elements = CrawlingTask.getElements(url)
                     elements?.let {
@@ -254,8 +263,11 @@ class MainActivity : AppCompatActivity() {
                             Toast.makeText(this@MainActivity, getString(R.string.str_invalid_url), Toast.LENGTH_SHORT).show()
                         }
                     }
+
+                    visibleProgressBar(false)
                 }
                 edtInputLink.setText("")
+
             }
 
             // 리스트 최상단 이동 버튼
@@ -298,10 +310,17 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 dlgBinding.apply {
-                    chkExtBrowserUse.run {
-                        isChecked = Pref.getInstance(this@MainActivity)?.getBoolean(Pref.USE_EXT_BROWSER)!!
+                    chkExtBrowserUse.apply {
+                        isChecked = Pref.getInstance(this@MainActivity)?.getBoolean(Pref.USE_EXT_BROWSER) ?: false
                         setOnCheckedChangeListener { compoundButton: CompoundButton, checked: Boolean ->
                             Pref.getInstance(this@MainActivity)?.setValue(Pref.USE_EXT_BROWSER, checked)
+                        }
+                    }
+
+                    chkUseClipData.apply {
+                        isChecked = Pref.getInstance(this@MainActivity)?.getBoolean(Pref.USE_CLIP_DATA) ?: false
+                        setOnCheckedChangeListener { buttonView, isChecked ->
+                            Pref.getInstance(this@MainActivity)?.setValue(Pref.USE_CLIP_DATA, isChecked)
                         }
                     }
 
@@ -368,20 +387,35 @@ class MainActivity : AppCompatActivity() {
 
             // title이 JavaScript에서 동적으로 생성되므로 브릿지 인터페이스를 통해 추출
             withContext(Dispatchers.Main) {
-                WebView(this@MainActivity).apply {
-                    settings.javaScriptEnabled = true
-                    webViewClient = object : WebViewClient() {
-                        override fun onPageFinished(view: WebView?, url: String?) {
+                suspendCoroutine<Unit> { continuation ->
+                    val isResumed = AtomicBoolean(false)
+                    val webView = WebView(this@MainActivity).apply {
+                        settings.javaScriptEnabled = true
+                        webViewClient = object : WebViewClient() {
+                            override fun onPageFinished(view: WebView?, url: String?) {
 //                        view?.evaluateJavascript("ScriptHandler.getTitle(document.title);") {
-                            Log.e("Url > $url")
+                                Log.e("Url > $url")
 
-                            view?.evaluateJavascript("document.title;") {
-                                Log.e("Getting title is $it")
-                                siteTitle = it
+
+                                Handler(Looper.getMainLooper()).postDelayed({
+                                    view?.evaluateJavascript("document.title;") {
+                                        if(isResumed.compareAndSet(false, true)) {
+                                            Log.e("Getting title is $it")
+                                            siteTitle = it
+
+                                            continuation.resume(Unit)
+                                        } else {
+                                            Log.e("resume() already called, skipping")
+                                        }
+                                    }
+                                }, 700)
+
                             }
                         }
                     }
-                }.loadUrl(ogEntity.url)
+
+                    webView.loadUrl(ogEntity.url)
+                }
             }
 //            ogEntity.title = CrawlingTask.getTag(ogEntity.url, "title")?.text().orEmpty().also { Log.e("title: $it") }
             ogEntity.title = siteTitle
@@ -394,5 +428,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         return ogEntity
+    }
+
+    private fun visibleProgressBar(isVisible: Boolean) = CoroutineScope(Dispatchers.Main).launch {
+        binding.apply {
+            rlProgress.isVisible = isVisible
+        }
     }
 }
