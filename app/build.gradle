@@ -8,16 +8,30 @@ plugins {
 
 android {
     compileSdkVersion 34
-    buildToolsVersion "30.0.2"
 
     defaultConfig {
         applicationId "com.example.opengraphsample"
         minSdkVersion 26
         targetSdkVersion 34
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        debug {
+            storeFile file("../jeepchief_keystore.jks")
+            storePassword SIGNED_STORE_PASSWORD
+            keyAlias SIGNED_KEY_ALIAS
+            keyPassword SIGNED_KEY_PASSWORD
+        }
+        release {
+            storeFile file("../jeepchief_keystore.jks")
+            storePassword SIGNED_STORE_PASSWORD
+            keyAlias SIGNED_KEY_ALIAS
+            keyPassword SIGNED_KEY_PASSWORD
+        }
     }
 
     buildFeatures {
@@ -25,9 +39,15 @@ android {
     }
 
     buildTypes {
-        release {
+        debug {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.debug
+        }
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
     compileOptions {
@@ -36,6 +56,29 @@ android {
     }
     kotlinOptions {
         jvmTarget = '1.8'
+    }
+
+    applicationVariants.all{
+        variant ->
+            variant.outputs.each{
+                    // on below line we are setting a name to our apk
+                output->
+                    // 앱의 이름을 지정해줍니다.
+                    def appName = rootProject.name
+                    // 파일생성 날짜를 이용하기 위한 처리.
+                    def formattedDate = new Date().format('yyyyMMdd')
+                    // 버전_(버전코드)_날짜
+                    def verName = "v${variant.versionName}_(${variant.versionCode})_$formattedDate"
+                    // on below line we are creating a new name for our apk.
+                    def newName = output.outputFileName
+                    // on below line we are replacing our previous name with our app name.
+                    newName = newName.replace("app-", "${appName}-")
+                    // on below line we are replacing -release with our formatted date.
+                    newName = newName.replace("-release", "_release_" + verName)
+                    newName = newName.replace("-debug", "_debug_" + verName)
+                    // at last we are setting our apk name to it.
+                    output.outputFileName  = newName
+            }
     }
 }
 

@@ -1,2 +1,2 @@
 include ':app'
-rootProject.name = "OpenGraphSample"
+rootProject.name = "MyBookMark"

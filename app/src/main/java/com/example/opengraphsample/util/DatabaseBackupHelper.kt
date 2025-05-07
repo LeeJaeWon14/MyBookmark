@@ -14,7 +14,7 @@ import java.io.FileOutputStream
 
 object DatabaseBackupHelper {
     private const val DATABASE_NAME = "OpenGraph.db"
-    private const val BACKUP_FILE_NAME = "OpenGraph_BackUp.db"
+    private const val BACKUP_FILE_NAME = "MyBookMark_BackUp.db"
 
     // 데이터베이스 백업 (Downloads 폴더)
     @RequiresApi(Build.VERSION_CODES.Q)

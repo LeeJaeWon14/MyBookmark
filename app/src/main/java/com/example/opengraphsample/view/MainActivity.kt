@@ -417,7 +417,6 @@ class MainActivity : AppCompatActivity() {
                     webView.loadUrl(ogEntity.url)
                 }
             }
-//            ogEntity.title = CrawlingTask.getTag(ogEntity.url, "title")?.text().orEmpty().also { Log.e("title: $it") }
             ogEntity.title = siteTitle
         }
         if(ogEntity.siteName.isEmpty()) {
